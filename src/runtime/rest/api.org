@@ -1,0 +1,2641 @@
+#+TITLE: The REST API
+#+AUTHOR: VLEAD
+#+DATE: [2016-07-26 Tue]
+#+SETUPFILE: ../../org-templates/level-2.org
+#+TAGS: boilerplate(b)
+#+EXCLUDE_TAGS: boilerplate
+#+OPTIONS: ^:nil
+
+* Introduction 
+  This document illustrates building of the REST API.
+
+  
+* REST
+  
+** Get and Add Generic Feedback
+   REST API to get and post generic feedback
+
+#+NAME: get_add_generic_feedback
+#+BEGIN_SRC python
+def post_data_to_elastic_search(index_name, doc_name, record):                                                                                          
+    try:
+        FEEDBACK_ELASTIC_DB_URL = "%s/%s/%s" % (ELASTIC_DB_URL, index_name, doc_name)                                                                                                                                                
+        current_app.logger.debug("FEEDBACK_ELASTIC_DB_URL : %s" % (FEEDBACK_ELASTIC_DB_URL))                                           
+        resp = requests.post(FEEDBACK_ELASTIC_DB_URL, data=json.dumps(record))                                                                               
+        if not resp.status_code == 201:                                                                                                                 
+            current_app.logger.debug("Error_code : %s" % (resp.status_code))                                                                            
+            return False                                                                                                                                
+        else:                                                                                                                                           
+            current_app.logger.debug("Status_code : %s" % (resp.status_code))                                                                           
+            return True                                                                                                                                 
+    except Exception as e:                                                                                                                              
+        print str(e)
+        return False
+
+@api.route('/', methods=['GET', 'POST'])
+def get_generic_feedback():
+    if request.method == 'GET':
+        current_app.logger.debug("get generic feedback")
+        response = SystemInterface.get_generic_feedback_form\
+          (GENERIC_FEEDBACK_VERSION)
+        return render_template('index.html', 
+                            questions_data=response)
+    if request.method == 'POST':
+        current_app.logger.debug("generic feedback post")
+        if request.is_json:
+            data_json = json.dumps(request.get_json())
+            data_dict = yaml.safe_load(data_json)
+        else:
+            abort(500, "the request does not contain data in json")
+
+        try:
+            gateway_ip = str(request.access_route[-1])
+            data_dict["gateway_ip"] = gateway_ip
+            current_app.logger.debug("execute add_generic_feedback")
+            fb = SystemInterface.add_generic_feedback(data_dict)
+            current_app.logger.debug("exectued add_generic_feedback")
+            return jsonify('{"status":"sucess"}')
+
+        except TypeError as err:
+            error_message = 'Malformed arguments, error: %s' % str(err)
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html', 
+                    data=error_message)
+
+        except Exception as err:
+            current_app.logger.error("Exception : %s" %(err))
+            abort(500, 'error: %s' % str(err))
+            
+#+END_SRC
+
+*** TestGetGenericFeedback
+ #+NAME: test_get_generic_feedback
+ #+BEGIN_SRC python
+class TestGetGenericFeedback(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_get_generic_feedback_form_data(self):
+        print "test_get_generic_feedback_form_data"
+
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/"
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 200)
+
+#+END_SRC
+
+
+*** TestAddGenericFeedback
+ #+NAME: test_add_generic_feedback
+ #+BEGIN_SRC python
+class TestAddGenericFeedback(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_add_generic_feedback(self):
+        print "test_add_generic_feedback"
+        version = "open-edx-virtual-labs-v2.0"
+        payload = {'version': version,
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+
+        response = self.client.post("/", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_generic_lab_feedback(self):
+        print "test_add_generic_lab_feedback"
+        version = "open-edx-virtual-labs-v2.0"
+
+        payload = {'lab_name': 'data structure',
+            'version': version,
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+
+        response = self.client.post("/", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_generic_exp_feedback(self):
+        print "test_add_generic_exp_feedback"
+        version = "open-edx-virtual-labs-v2.0"
+
+        payload = {'lab_name': 'data structure',
+            'exp_name': 'tuples',
+            'version': version,
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+
+        response = self.client.post("/", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        self.assertEqual(response.status_code, 200)
+
+
+ #+END_SRC
+
+
+** Get Success Template
+   Rest API to render a template on success.
+#+NAME: get_success_template
+#+BEGIN_SRC  python
+@api.route('/success', methods=['GET'])
+def get_success_template():
+    current_app.logger.debug("")
+    return render_template('success.html')
+
+#+END_SRC
+
+
+** Get and ADD Feedback for lab and experiments
+   REST API to get and post lab and experiment feedback
+#+NAME: get_add_feedback
+#+BEGIN_SRC python
+@api.route('/feedback', methods=['GET', 'POST'])
+def get_add_feedback():
+    if request.method == 'GET':
+        current_app.logger.debug("")
+        if 'lab_name' not in request.args or 'key' not in request.args:
+            error_message = 'Either lab_name or key or both arguments are not passed'
+            return render_template('error.html', data=error_message)
+        else:
+            lab_name = str(request.args['lab_name'])
+            key = str(request.args['key'])
+
+        if 'exp_name' not in request.args:
+            exp_name = None
+        else:
+            exp_name = str(request.args['exp_name'])
+
+        if 'date' not in request.args:
+            date = None
+        else:
+            date = str(request.args['date'])
+
+        if 'version' not in request.args:
+            version = None
+        else:
+            version = str(request.args['version'])
+
+        if 'user_id' not in request.args:
+            user_id = None
+        else:
+            user_id = str(request.args['user_id'])
+            current_app.logger.debug("lab_name = %s, exp_name=%s, user_id=%s, "
+                        "key=%s" % (lab_name, exp_name, user_id, key))
+        try:
+            current_app.logger.debug("execute get_feedback_form")
+            response = SystemInterface.get_feedback_form(key, 
+                                lab_name, 
+                                exp_name,
+                                version,
+                                user_id)
+            current_app.logger.debug("executed get_feedback_form")                            
+            return render_template('index.html', 
+                    questions_data=response)
+
+        except NotAuthorizedError as err:
+            error_message = 'Not Authorized error: %s' % str(err)
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html', 
+                    data=error_message)
+            
+        except TypeError as err:
+            error_message = 'Malformed arguments, error: %s' % str(err)
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html', 
+                    data=error_message)
+        except Exception as err:
+            error_message = 'error: %s' % str(err)
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html', 
+                    data=error_message)
+
+    if request.method == 'POST':
+        if request.is_json:
+            data_json = json.dumps(request.get_json())
+            data_dict = yaml.safe_load(data_json)
+        else:
+            abort(500, "the request does not contain data in json")
+
+        if 'lab_name' not in data_dict or 'key' not in data_dict or \
+           'responses' not in data_dict or 'version' not in data_dict:
+            abort(400, 'Either lab name or key or version or responses' 
+                      ' are not passed')
+        else:
+            gateway_ip = str(request.access_route[-1]) 
+            current_app.logger.debug("lab_name = %s, responses=%s, "
+                                         "version=%s, key=%s, "
+                          %(data_dict['lab_name'], data_dict['responses'],
+                            data_dict['version'], data_dict['key']))
+
+            data_dict["gateway_ip"] = gateway_ip
+        try:
+            current_app.logger.debug("execute add_feedback")
+            fb = SystemInterface.add_feedback(data_dict)
+            current_app.logger.debug("execute add_feedback")
+            return jsonify('{"status":"sucess"}')
+
+        except NotAuthorizedError as err:
+            current_app.logger.error("%s" %(err))
+            abort(401, 'Not Authorized error: %s' % str(err))
+        except TypeError as err:
+            current_app.logger.error("%s" %(err))
+            abort(400, 'Malformed arguments, error: %s' % str(err))
+        except Exception as err:
+            current_app.logger.error("%s" %(err))
+            abort(500, 'error: %s' % str(err))
+  
+#+END_SRC
+
+*** TestGetFeedback
+ #+NAME: test_get_feedback
+ #+BEGIN_SRC python
+class TestGetFeedback(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_get_lab_feedback_form_data(self):
+        print "test_get_lab_feedback_form_data"
+
+        lab_name = "Data Structures"
+        user_id = "123user"
+        version = None
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/feedback?lab_name=%s&exp_name=%s&user_id=%s&key=%s" \
+          % (lab_name, user_id, version, KEY)
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 200)
+
+
+    def test_get_exp_feedback_form_data(self):
+        print "test_get_exp_feedback_form_data"
+        lab_name = "Data Structures"
+        exp_name = "binary search"
+        user_id = "123user"
+        version = None
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/feedback?lab_name=%s&exp_name=%s&user_id=%s&key=%s \
+                      &version=%s"\
+                      % (lab_name, exp_name, user_id, version, KEY)
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 200)
+
+#+END_SRC
+
+#+NAME: error_test_cases
+#+BEGIN_SRC python
+    def test_get_lab_feedback_with_401_error(self):
+        print "test_get_lab_feedback_with_401_error"
+        print "test not authorized error"
+
+        lab_name = "Data Structures"
+        exp_name = "binary search"
+        user_id = "123user"
+        key = "jigajiga"
+        version = None
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/feedback?lab_name=%s&exp_name=%s&user_id=%s&key=%s \
+                      &version=%s"\
+                      % (lab_name, exp_name, user_id, version, key)
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 401)
+
+
+    def test_get_lab_feedback_with_400_error(self):
+        print "test_get_lab_feedback_with_400_error"
+        print "test bad request"
+
+        lab_name = "Data Sturtures"
+        exp_name = "binary search"
+        user_id = "123user"
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/feedback?lab_name=%s&exp_name=%s&user_id=%s&key=%s" \
+          % (lab_name, exp_name, user_id, "default key")
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 400)
+
+ 
+#+END_SRC
+
+
+*** TestAddFeedback
+ #+NAME: test_add_feedback
+ #+BEGIN_SRC python
+class TestAddFeedback(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_add_exp_feedback(self):
+        print "test_add_lab_feedback"
+        version = "open-edx-virtual-labs-v2.0"
+        payload = {'lab_name': 'data structure',
+            'exp_name': 'tuples',
+            'key' : KEY,
+            'version': version,
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+
+        response = self.client.post("/feedback", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_lab_feedback(self):
+        print "test_add_exp_feedback"
+        version = "open-edx-virtual-labs-v2.0"
+        payload = {'lab_name': 'data structure',
+            'key' : KEY,
+            'version': version,
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+
+        response = self.client.post("/feedback", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        self.assertEqual(response.status_code, 200)
+
+'''
+    def test_get_lab_feedback_form_data(self):
+        print "test_get_lab_feedback_form_data"
+
+        headers = {'content-type': 'application/json'}
+        response = self.client.get("/feedback?lab_name=data structure&key=some"
+                                       " alphanumeric string",
+                                        headers=headers)
+        result = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(result['lab_name'], "data structure")
+
+    def test_get_exp_feedback_form_data(self):
+        print "test_get_exp_feedback_form_data"
+
+        headers = {'content-type': 'application/json'}
+        response = self.client.get("/feedback?lab_name=data structure&exp_name"
+                                       "=tuples&key=some alphanumeric string",
+                                        headers=headers)
+        result = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(result['lab_name'], "data structure")
+        self.assertEqual(result['exp_name'], "tuples")
+'''
+ #+END_SRC
+
+
+** Get Generic Lab and Exp Feedback 
+   REST API to get generic lab and experiment feedback. 
+#+NAME: get_add_generic_lab_exp_feedback
+#+BEGIN_SRC python
+@api.route('/feedback/<string>', methods=['GET'])
+def get_add_generic_lab_and_exp_feedback(string):
+    if request.method == 'GET':
+        if string == 'lab':
+            current_app.logger.debug("execute get_generic_feedback_form")
+            response = SystemInterface.get_generic_feedback_form\
+              (GENERIC_LAB_FEEDBACK_VERSION)
+            current_app.logger.debug("executed get_generic_feedback_form")
+            return render_template('index.html', 
+                                questions_data=response)
+        elif string == 'experiment':
+            current_app.logger.debug("execute get_generic_feedback_form")
+            response = SystemInterface.get_generic_feedback_form\
+              (GENERIC_EXP_FEEDBACK_VERSION)
+            current_app.logger.debug("executed get_generic_feedback_form")
+            return render_template('index.html', 
+                                questions_data=response)
+
+    if request.method == 'POST':
+        if request.is_json:
+            data_json = json.dumps(request.get_json())
+            data_dict = yaml.safe_load(data_json)
+        else:
+            abort(500, "the request does not contain data in json")
+
+        try:
+            gateway_ip = str(request.access_route[-1])
+            data_dict["gateway_ip"] = gateway_ip
+            current_app.logger.debug("execute add_generic_lab_and_exp_feedback")
+            fb = SystemInterface.add_generic_lab_and_exp_feedback(data_dict)
+            current_app.logger.debug("executed add_generic_lab_and_exp_feedback")
+            return jsonify('{"status":"sucess"}')
+
+        except TypeError as err:
+            error_message = 'Malformed arguments, error: %s' % str(err)
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html', 
+                    data=error_message)
+
+        except Exception as err:
+            current_app.logger.error("%s" %(error_message))
+            abort(500, 'error: %s' % str(err))
+
+#+END_SRC
+
+*** TestGetGenericLabAndExpFeedback
+ #+NAME: test_get_generic_lab_and_exp_feedback
+ #+BEGIN_SRC python
+class TestGetGenericLabAndExpFeedback(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_get_generic_lab_feedback_form_data(self):
+        print "test_get_generic_lab_feedback_form_data"
+
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/feedback/lab"
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 200)
+
+
+    def test_get_generic_exp_feedback_form_data(self):
+        print "test_get_generic_exp_feedback_form_data"
+
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/feedback/experiment"
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 200)
+
+#+END_SRC
+
+#+NAME: error_test_cases
+#+BEGIN_SRC python
+    def test_get_lab_feedback_with_401_error(self):
+        print "test_get_lab_feedback_with_401_error"
+        print "test not authorized error"
+
+        lab_name = "Data Structures"
+        exp_name = "binary search"
+        user_id = "123user"
+        key = "jigajiga"
+        version = None
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/feedback?lab_name=%s&exp_name=%s&user_id=%s&key=%s \
+                      &version=%s"\
+                      % (lab_name, exp_name, user_id, version, key)
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 401)
+
+
+    def test_get_lab_feedback_with_400_error(self):
+        print "test_get_lab_feedback_with_400_error"
+        print "test bad request"
+
+        lab_name = "Data Sturtures"
+        exp_name = "binary search"
+        user_id = "123user"
+        headers = {'Content-Type': 'application/json'}
+        request_str = "/feedback?lab_name=%s&exp_name=%s&user_id=%s&key=%s" \
+          % (lab_name, exp_name, user_id, "default key")
+
+        print "request-str = %s" % request_str
+        response = self.client.get(request_str, headers=headers)
+        self.assertEqual(response.status_code, 400)
+
+ 
+#+END_SRC
+
+
+ #+NAME: test_add_generic_lab_and_exp_feedback
+ #+BEGIN_SRC python
+class TestAddGenericLabAndExpFeedback(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_add_generic_lab_feedback(self):
+        print "test_add_generic_lab_feedback"
+        version = "generic-lab-feedback-v2.0"
+        payload = {'version': version,
+                   'lab_name': 'data structure',
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+
+        response = self.client.post("/feedback/lab", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        self.assertEqual(response.status_code, 200)
+
+
+
+'''
+    def test_get_lab_feedback_form_data(self):
+        print "test_get_lab_feedback_form_data"
+
+        headers = {'content-type': 'application/json'}
+        response = self.client.get("/feedback?lab_name=data structure&key=some"
+                                       " alphanumeric string",
+                                        headers=headers)
+        result = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(result['lab_name'], "data structure")
+
+    def test_get_exp_feedback_form_data(self):
+        print "test_get_exp_feedback_form_data"
+
+        headers = {'content-type': 'application/json'}
+        response = self.client.get("/feedback?lab_name=data structure&exp_name"
+                                       "=tuples&key=some alphanumeric string",
+                                        headers=headers)
+        result = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(result['lab_name'], "data structure")
+        self.assertEqual(result['exp_name'], "tuples")
+'''
+ #+END_SRC
+
+*** TestAddGenericLabAndExpFeedback
+ #+NAME: test_add_generic_lab_and_exp_feedback
+ #+BEGIN_SRC python
+class TestAddGenericLabandExpFeedback(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_add_generic_lab_feedback(self):
+        print "test_add_generic_lab_feedback"
+        version = "open-edx-virtual-labs-v2.0"
+        payload = {'version': version,
+                   'lab_name': 'Data Structures',
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+
+        response = self.client.post("/feedback/lab", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        self.assertEqual(response.status_code, 200)
+
+    def test_add_generic_exp_feedback(self):
+        print "test_add_generic_exp_feedback"
+        version = "open-edx-virtual-labs-v2.0"
+        payload = {'version': version,
+                   'lab_name': 'Problem Solving',
+                   'exp_name': 'Number Systems',
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+
+        response = self.client.post("/feedback/experiment", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        self.assertEqual(response.status_code, 200)
+
+ #+END_SRC
+
+
+** Get Feedback Usage
+   This is the REST API method for getting the feedback usage. 
+
+#+NAME: get_feedback_usage
+#+BEGIN_SRC python
+@api.route('/usage_from_feedback', methods=['GET'])
+def get_feedback_usage():
+    if request.method == 'GET':
+        if 'gateway_ip' in request.args and 'date' in request.args and 'key'\
+            in request.args:
+            gateway_ip = str(request.args['gateway_ip'])
+            date  = request.args['date']
+            key = request.args['key']
+            try:
+                current_app.logger.debug("execute get_feedback_usage")
+                usage_count = SystemInterface.get_feedback_usage(gateway_ip,\
+                                                                 date, key)
+                current_app.logger.debug("executed get_feedback_usage")
+                usage = {'usage': usage_count}
+                return jsonify(usage)
+            except NotAuthorizedError as err:
+                error_message =  'Not Authorized error: %s' % str(err)
+                """
+                if request.headers['Content-Type'] == "application/json":
+                    abort(401, error_message)
+                else:
+                """
+                current_app.logger.error("%s" %(error_message))
+                return render_template('error.html', 
+                                       data=error_message)
+            except TypeError as err:
+                error_message = 'Malformed arguments, error: %s' % str(err)
+                """
+                if request.headers['Content-Type'] == "application/json":
+                abort(400, error_message)
+                else:
+                """
+                current_app.logger.error("%s" %(error_message))
+                return render_template('error.html', 
+                                       data=error_message)
+            except Exception as err:
+                error_message = 'error: %s' % str(err)
+                """
+                if request.headers['Content-Type'] == "application/json":
+                abort(400, error_message)
+                else:
+                """
+                current_app.logger.error("%s" %(error_message))
+                return render_template('error.html', 
+                                    data=error_message)
+
+            
+#+END_SRC
+
+
+** TestGetFeedbackUsage
+#+NAME: test_get_feedback_usage
+#+BEGIN_SRC python
+class TestGetFeedbackUsage(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_get_feedback_usage(self):
+        print "test_get_feedback_usage"
+
+        version = "open-edx-virtual-labs-v2.0"
+        payload = {'lab_name': 'data structure',
+            'exp_name': 'tuples',
+            'key' : KEY,
+            'version': version,
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+        
+        response = self.client.post("/feedback", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        headers = {'content-type': 'application/json'}
+        date_obj = datetime.datetime.now().date()
+        date_str = date_obj.strftime('%d-%m-%Y')
+        url = "/usage_from_feedback?gateway_ip=1.2.3.4&date="+date_str+"&key=defaultkey"
+  
+        response = self.client.get(url, headers=headers)
+        result = json.loads(response.data)
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(len(result), 1)
+        self.assertEqual(result['usage'], 1)
+
+#+END_SRC
+
+
+** Get Feedback Dump
+   This is the REST API method for dumping the feedback forms to elastic search. 
+
+#+NAME: get_feedback_dump
+#+BEGIN_SRC python
+@api.route('/feedback_dump', methods=['GET', 'POST'])
+def get_feedback_dump():
+    if request.method == 'GET':
+        if 'date' in request.args and 'key' in request.args:
+            date  = request.args['date']
+            key = request.args['key']
+            
+            try:
+                current_app.logger.debug("execute get_feedback_dump")
+                feedbacks = SystemInterface.get_feedback_dump(date, key)
+                current_app.logger.debug("executed get_feedback_dump")
+                return jsonify_list(feedbacks)
+                
+            except NotAuthorizedError as err:
+                error_message =  'Not Authorized error: %s' % str(err)                
+                current_app.logger.error("%s" %(error_message))
+                abort(401, error_message)
+
+            except TypeError as err:
+                error_message = 'Malformed arguments, error: %s' % str(err)
+                current_app.logger.error("%s" %(error_message))
+                abort(400, error_message)                
+
+            except Exception as err:
+                error_message = 'error: %s' % str(err)
+                current_app.logger.error("%s" %(error_message))
+                abort(404, error_message)
+                
+            
+
+#+END_SRC
+
+   
+** TestGetFeedbackDump
+#+NAME: test_get_feedback_dump
+#+BEGIN_SRC python
+class TestGetFeedbackDump(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+
+    def test_get_feedback_dump(self):
+        print "test_get_feedback_dump"
+
+        version = "open-edx-virtual-labs-v2.0"
+        payload = {'lab_name': 'data structure',
+            'exp_name': 'tuples',
+            'key' : KEY,
+            'version': version,
+            'responses': [{'name': 'How is your breakfast?',
+                            'answers':['yes', 'no'] }]
+           }
+
+        headers = {'Content-Type': 'application/json'}
+        ip_address = {'REMOTE_ADDR': '1.2.3.4'}
+        
+        response = self.client.post("/feedback", data=json.dumps(payload),
+                                 headers=headers,
+                                 environ_overrides=ip_address)
+
+        date_obj = datetime.datetime.now().date()
+        date_str = date_obj.strftime('%d-%m-%Y')
+
+        url = "/feedback_dump?date="+date_str+"&key=defaultkey"
+
+        response = self.client.get(url, headers=headers)
+        self.assertEqual(response.status_code, 200)
+#        date_1 = datetime.datetime.strptime(date_str, "%d-%m-%Y").date()
+#        print response.data
+#        self.assertEqual(response.date, date_1)
+
+#+END_SRC
+
+
+** Get Gateway IP
+   This is the REST API method for getting the Gateway IP.
+
+#+NAME: get_gateway_ip
+#+BEGIN_SRC python
+@api.route('/get_gateway_ip', methods=['GET'])
+def get_gateway_ip():
+    try:
+        current_app.logger.debug("")
+        gateway_ip = str(request.access_route[-1])
+        return jsonify({'gateway_ip': gateway_ip}) 
+    except Exception as e:
+        current_app.logger.error("%s" %(str(e)))
+        return "Error in getting the gateway_ip"
+  
+#+END_SRC
+
+
+
+** Get and Add Question
+   REST API to get and add question.
+
+#+NAME: get_and_add_question
+#+BEGIN_SRC python
+@api.route('/questions', methods=['GET', 'POST'])
+def add_question():
+    if request.method == 'GET':
+        try:
+            current_app.logger.debug("execute get_questions")
+            questions = SystemInterface.get_questions()
+            current_app.logger.debug("executed get_questions")
+
+            return jsonify_list(questions)
+
+        except TypeError as err:
+            error_message = 'Malformed arguments, error: %s' % str(err)
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html', 
+                    data=error_message)
+
+        except Exception as err:
+            current_app.logger.error("%s" %(err))
+            abort(500, 'error: %s' % str(err))
+       
+    if request.method == 'POST':
+        if request.is_json:
+            data_json = json.dumps(request.get_json())
+            data_dict = yaml.safe_load(data_json)
+        else:
+            abort(500, "the request does not contain data in json")
+
+        try:
+            current_app.logger.debug("execute add_question")
+            q1 = SystemInterface.add_question(data_dict)
+            current_app.logger.debug("executed add_question")
+            return jsonify(q1)
+
+        except TypeError as err:
+            error_message = 'Malformed arguments, error: %s' % str(err)
+            current_app.logger.error("%s" %(err))
+            return render_template('error.html', 
+                    data=error_message)
+
+        except Exception as err:
+            current_app.logger.error("%s" %(err))
+            abort(500, 'error: %s' % str(err))
+            
+#+END_SRC
+
+
+*** TestAddQuestion
+ #+NAME: test_add_question
+ #+BEGIN_SRC python
+class TestAddQuestion(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_add_question(self):
+        print "test_question"
+        payload = {'name': 'How are you?',
+                   'question_type': 'radio',
+                   'key': KEY}
+
+        headers = {'Content-Type': 'application/json'}
+
+        response = self.client.post("/questions", data=json.dumps(payload),
+                                 headers=headers)
+
+        self.assertEqual(response.status_code, 200)
+
+ #+END_SRC
+   
+
+*** TestGetQuestions
+ #+NAME: test_get_questions
+ #+BEGIN_SRC python
+class TestGetQuestion(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_get_questions(self):
+        print "test_question"
+        payload = {'name': 'How are you?',
+                   'question_type': 'radio',
+                   'key': KEY}
+
+        headers = {'Content-Type': 'application/json'}
+
+        response = self.client.post("/questions", data=json.dumps(payload),
+                                 headers=headers)
+
+        response = self.client.get("/questions", headers=headers)
+        self.assertEqual(response.status_code, 200)
+
+ #+END_SRC
+   
+
+** Update and Delete Question
+   REST API to update and delete question.
+#+NAME: update_and_delete_question
+#+BEGIN_SRC python
+@api.route('/questions/<id>', methods=['GET', 'PUT', 'DELETE'])
+def update_and_delete_question(id):
+    if request.method == 'GET':
+        try:
+            current_app.logger.debug("execute get_question_by_id(id)")
+            question = SystemInterface.get_question_by_id(id)
+            current_app.logger.debug("executed get_question_by_id(id)")
+            return jsonify(question)
+
+        except NotFoundError as err:
+            error_message = "No question found with id: %s found." % id
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html',
+                    data=error_message)
+
+        except TypeError as err:
+            error_message = 'Malformed arguments, error: %s' % str(err)
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html', 
+                    data=error_message)
+
+        except Exception as err:
+            current_app.logger.error("%s" %(err))
+            abort(500, 'error: %s' % str(err))
+    
+    if request.method == 'PUT':
+        if request.is_json:
+            data_json = json.dumps(request.get_json())
+            data_dict = yaml.safe_load(data_json)
+            data_dict['q_id']=id
+        else:
+            abort(500, "the request does not contain data in json")
+
+        try:
+            current_app.logger.debug("execute update_question")
+            q1 = SystemInterface.update_question(data_dict)
+            current_app.logger.debug("execute update_question")
+            return jsonify(q1)
+
+        except TypeError as err:
+            error_message = 'Malformed arguments, error: %s' % str(err)
+            current_app.logger.error("%s" %(err))
+            return render_template('error.html', 
+                    data=error_message)
+
+        except Exception as err:
+            current_app.logger.error("%s" %(err))
+            abort(500, 'error: %s' % str(err))
+
+    if request.method == 'DELETE':
+
+        try:
+            
+            current_app.logger.debug("execute delete_question")
+            q1 = SystemInterface.delete_question(id)
+            current_app.logger.debug("executed delete_question")
+            return jsonify('{"status":"sucess"}')
+
+        except TypeError as err:
+            error_message = 'Malformed arguments, error: %s' % str(err)
+            current_app.logger.error("%s" %(error_message))
+            return render_template('error.html', 
+                    data=error_message)
+
+        except Exception as err:
+            current_app.logger.error("%s" %(err))
+            abort(500, 'error: %s' % str(err))
+
+#+END_SRC
+*** TestUpdateQuestion
+ #+NAME: test_update_question
+ #+BEGIN_SRC python
+class TestUpdateQuestion(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_update_question(self):
+        print "test_update_question"
+        payload = {'name': 'How are you?',
+                   'question_type': 'radio',
+                   'key': KEY}
+
+        payload1 = {'name': 'How are labs?',
+                   'question_type': 'text',
+                   'key': KEY}
+
+        headers = {'Content-Type': 'application/json'}
+
+        response = self.client.post("/questions", data=json.dumps(payload),
+                                 headers=headers)
+
+        response = self.client.put("/questions/1", data=json.dumps(payload1),
+                                 headers=headers)
+
+        self.assertEqual(response.status_code, 200)
+
+ #+END_SRC
+   
+*** TestDeleteQuestion
+ #+NAME: test_delete_question
+ #+BEGIN_SRC python
+class TestDeleteQuestion(TestCase):
+    TESTING = True
+    def create_app(self):
+        app = create_app(config)
+        return app
+
+    def setUp(self):
+        db.create_all()
+        q_type = "radio"
+        question_cls = System.delegate.entities['question']
+        question1 = question_cls(name="How is your breakfast?", 
+                                  question_type=q_type)
+        question2 = question_cls(name="How is your lunch?", 
+                                 question_type=q_type)
+        question3 = question_cls(name="How is your dinner?", 
+                                 question_type=q_type)
+
+        question1.save()
+        question2.save()
+        question3.save()
+
+
+    def tearDown(self):
+        db.session.remove()
+        db.drop_all()
+
+    def test_delete_question(self):
+        print "test_delete_question"
+
+        payload = {'name': 'How are you?',
+                   'question_type': 'radio',
+                   'key': KEY
+                  }
+
+        headers = {'Content-Type': 'application/json'}
+
+        response = self.client.post("/questions", data=json.dumps(payload),
+                                 headers=headers)
+
+        response = self.client.delete("/questions/1", headers=headers)
+
+        self.assertEqual(response.status_code, 200)
+
+ #+END_SRC
+   
+
+** Dump College Details into the Elastic Database
+   - This REST API is consumed by the college cloud's post processing script ([[https://github.com/openedx-vlead/college-cloud/blob/cc-april-delhi/src/runtime/implementation/index.org#post-process-script][Reference]])
+   - This REST API is expects college cloud details as a json data.
+   - It forms the REST API for the elastic search to dump the json data based on college cloud's
+     json data. sample API looks like =http://<elastic-search-db-hostname>/college_cloud/details/id=<mac_id>=
+   - Every individual college cloud details are identified by the =MAC_ADDRESS= of college cloud details
+   - It will parse the college cloud details json data and checks in elastic search database for
+     the existing records using =MAC_ADDRESS= if not present it will add a new record.
+
+#+NAME: add_college_details_to_elk
+#+BEGIN_SRC python
+@api.route('/dump_cc_details_to_elastic_db', methods=['GET', 'POST'])
+def dump_cc_details_to_elk():
+  if request.method == 'GET':
+      return "Method not allowed"
+
+  if request.method == 'POST':
+      try:
+	  data_json = json.dumps(request.get_json())
+	  data_dict = yaml.safe_load(data_json)
+
+	  if 'college_details' not in data_dict or 'key' not in data_dict:
+	      abort(400, 'college_details or key attribute is not passed')
+
+          if data_dict['key'] != KEY:
+	      abort(401, 'Unauthorized to perform this operation')
+
+
+	  if 'key' not in data_dict:
+	      print "Unauthorized to perform this operation"
+	      abort(401, 'Unauthorized to perform this operation')
+
+	  cc_details = data_dict['college_details']
+	  key = data_dict['key']
+
+	  current_app.logger.debug("College Data : %s " % (cc_details))
+	  mac_addr = cc_details['mac_addr']            
+	  cc_details_elastic_db_url = "%s/college_cloud/details/id=%s" \
+				      % (ELASTIC_DB_URL, str(mac_addr))
+
+	  current_app.logger.debug("college cloud elastic db url : %s " \
+				   % (cc_details_elastic_db_url))
+	  college_data = requests.get(cc_details_elastic_db_url)
+
+          if college_data.status_code == 404:
+	      create_college = requests.post(cc_details_elastic_db_url,
+					     data=json.dumps(cc_details))
+
+	      if create_college.status_code == 200 or create_college.status_code == 201:
+		  current_app.logger.debug("Added college details : %s "
+				       % (cc_details))
+		  return jsonify({"status" : "success"})
+	      else:
+		  current_app.logger.debug("Error in adding college details : %s " % (cc_details))
+		  abort(int(college_data.status_code),
+			"{'status' : 'Error in adding college details'}")
+	  else:
+	      current_app.logger.debug("College details already exists : %s "
+				       % (cc_details))
+	      return jsonify({"status" : "College details already present"})
+      except Exception as e:
+	  abort(500, str(e))
+#+END_SRC
+*** TestDumpCollegeDetailsToElk
+#+NAME: test_dump_college_details_to_elk
+#+BEGIN_SRC python
+class TestDumpCollegeDetailsToElk(TestCase):
+   TESTING = True
+   def create_app(self):
+       app = create_app(config)
+       return app
+
+   def setUp(self):
+       db.create_all()
+
+   def tearDown(self):
+       db.session.remove()
+       db.drop_all()
+
+   def test_dump_college_details_to_elk(self):
+       print "test_dump_college_details_to_elk"
+       payload = {
+	    'key' : KEY,
+	    'college_details':{ 
+		 "college_address":"hyd", 
+		 "college_name": "bhoj reddy", 
+		 "college_pincode":"500080", 
+		 "contact_name":"madhavi", 
+		 "contact_no":"9866188505", 
+		 "email_id":"madhavi@vlabs.ac.in",
+		 "mac_addr":"44:a8:42:f1:df:ef" }
+       }
+
+       headers = {'Content-Type': 'application/json'}
+
+       response = self.client.post("/dump_cc_details_to_elastic_db", \
+				   data=json.dumps(payload), headers=headers)
+
+       self.assertEqual(response.status_code, 200)
+     
+#+END_SRC
+
+    
+** Dump Feedback to ELK
+   - This API consumed by the college cloud's post processing script
+     ([[https://github.com/openedx-vlead/college-cloud/blob/cc-april-delhi/src/runtime/implementation/index.org#post-process-script][Reference]]) to dump the college cloud's feedback
+     forms data which is in json format into the elastic search
+     database.
+   - If the college cloud details are registered with elastic search
+     database only then feedbacks will be dumped into the elastic
+     database.
+   - Also this API is used by the script (reference) to dump the
+     production feedback forms data into the elastic search database.
+     (list of feedbacks) into elastic search database.
+   - Every individual feedback is a single json record.
+   - Every feedback json record is stored as a seperate record in elastic
+     search database.
+
+#+NAME: add_feedback_to_elastic_db
+#+BEGIN_SRC python
+@api.route('/dump_feedback_to_elastic_db', methods=['GET', 'POST'])
+def dump_feedback_to_elk():
+
+    if request.method == 'GET':
+	return "Method not allowed"
+
+    if request.method == 'POST':
+	data_json = json.dumps(request.get_json())
+	data_dict = yaml.safe_load(data_json)
+
+	if 'feedbacks' not in data_dict or 'key' not in data_dict:
+	    abort(400, 'feedbacks or key attribute is not passed')
+
+        if data_dict['key'] != KEY:
+	    abort(401, 'Unauthorized to perform this operation')
+	
+	feedbacks = data_dict['feedbacks']
+	key = data_dict['key']        
+        doc_name = "feedback"
+
+	if 'mac_addr' in data_dict:
+	    mac_addr = str(data_dict['mac_addr'])
+            cc_details_elastic_db_url = "%s/college_cloud/details/id=%s" % (ELASTIC_DB_URL, mac_addr)
+            current_app.logger.debug("college cloud elastic db url : %s " % (cc_details_elastic_db_url))
+	    r = requests.get(cc_details_elastic_db_url)
+	    if r.json()['found'] == False:		
+		return jsonify({"status" : "failed", "error" : "College cloud is not registered"})
+	    else:
+		current_app.logger.debug("College Cloud Details : %s " % (r.json()))
+		index_name = str(r.json()['_source']['college_name']) + "_" + str(mac_addr) 
+		current_app.logger.debug("index_name : %s, doc_name : %s " % (index_name, doc_name))
+	else:
+	    index_name = "vlabs"
+            current_app.logger.debug("Elastic Search URL : %s " % (ELASTIC_DB_URL))
+	    current_app.logger.debug("index_name : %s, doc_name : %s " % (index_name, doc_name))
+
+	for feedback in feedbacks:
+	    if(post_data_to_elastic_search(index_name, doc_name, feedback)):
+		current_app.logger.debug("Added Feedback : %s " % (feedback))
+	    else:
+		current_app.logger.error("failed to add feedback: %s " % (feedback))
+		abort(500)
+
+	return jsonify({"status" : "success"})
+                  
+#+END_SRC
+*** TestDumpFeedbackDetailsToElk
+#+NAME: test_feedback_details_to_elk
+#+BEGIN_SRC python
+class TestFeedbackDumpToElk(TestCase):
+     TESTING = True
+     def create_app(self):
+	 app = create_app(config)
+	 return app
+
+     def setUp(self):
+	 db.create_all()
+
+     def tearDown(self):
+	 db.session.remove()
+	 db.drop_all()
+
+     def test_feedback_details_to_elk_aws_cloud(self):
+	 print "test_dump_feedback_details_to_elk_aws_cloud"
+	 payload = {
+	     'key' : KEY,
+	     'feedbacks': [
+		 {
+		     "user_id": "Null",
+		     "responses": [
+			 {
+			     "question": {
+				 "name": "Please provide any other feedback about Virtual Labs",
+				 "question_type": "textarea",
+				 "id": 21
+			     },
+			     "answers": [
+				 {
+				     "name": "test",
+				     "id": 18
+				 }
+			     ],
+			     "id": 40
+			 },
+			 {
+			     "question": {
+				 "name": "Designation",
+				 "question_type": "radio",
+				 "id": 22
+			     },
+			     "answers": [
+				 {
+				     "name": "Student",
+				     "id": 1
+				 }
+			     ],
+			     "id": 1
+			 },
+			 {
+			     "question": {
+				 "name": "Did you attempt any experiments ?",
+				 "question_type": "radio",
+				 "id": 23
+			     },
+			     "answers": [
+				 {
+				     "name": "No",
+				     "id": 2
+				 }
+			     ],
+			     "id": 10
+			 },
+			 {
+			     "question": {
+				 "name": "Please rate your experience",
+				 "question_type": "radio",
+				 "id": 24
+			     },
+			     "answers": [
+				 {
+				     "name": "2/10",
+				     "id": 4
+				 }
+			     ],
+			     "id": 11
+			 }
+		     ],
+		     "exp_name": "Null",
+		     "lab_name": "generic feedback",
+		     "version": "generic-feedback-v2.0",
+		     "gateway_ip": "10.100.1.7",
+		     "date": "21-10-2016",
+		     "id": 14
+		 }
+	     ]
+	 }
+
+     def test_feedback_details_to_elk_college_cloud(self):
+	 print "test_dump_feedback_details_to_elk_college_cloud"
+	 payload = {
+	     'key' : KEY,
+	     'feedbacks': [
+		 {
+		     "user_id": "Null",
+		     "responses": [
+			 {
+			     "question": {
+				 "name": "Please provide any other feedback about Virtual Labs",
+				 "question_type": "textarea",
+				 "id": 21
+			     },
+			     "answers": [
+				 {
+				     "name": "test",
+				     "id": 18
+				 }
+			     ],
+			     "id": 40
+			 },
+			 {
+			     "question": {
+				 "name": "Designation",
+				 "question_type": "radio",
+				 "id": 22
+			     },
+			     "answers": [
+				 {
+				     "name": "Student",
+				     "id": 1
+				 }
+			     ],
+			     "id": 1
+			 },
+			 {
+			     "question": {
+				 "name": "Did you attempt any experiments ?",
+				 "question_type": "radio",
+				 "id": 23
+			     },
+			     "answers": [
+				 {
+				     "name": "No",
+				     "id": 2
+				 }
+			     ],
+			     "id": 10
+			 },
+			 {
+			     "question": {
+				 "name": "Please rate your experience",
+				 "question_type": "radio",
+				 "id": 24
+			     },
+			     "answers": [
+				 {
+				     "name": "2/10",
+				     "id": 4
+				 }
+			     ],
+			     "id": 11
+			 }
+		     ],
+		     "exp_name": "Null",
+		     "lab_name": "generic feedback",
+		     "version": "generic-feedback-v2.0",
+		     "gateway_ip": "10.100.1.7",
+		     "date": "21-10-2016",
+		     "id": 14
+		 }
+	     ]
+	 }
+
+	 headers = {'Content-Type': 'application/json'}
+
+	 response = self.client.post("/dump_feedback_to_elastic_db", data=json.dumps(payload),
+				  headers=headers)
+
+	 self.assertEqual(response.status_code, 200)
+   
+#+END_SRC
+
+    
+** Dump Usage to ELK
+
+   - This API is consumed by the college cloud's post processing
+     script ([[https://github.com/openedx-vlead/college-cloud/blob/cc-april-delhi/src/runtime/implementation/index.org#post-process-script][Reference]]) to dump the college cloud's usage data
+     which is in json format into elastic search database.
+   - Every individual usage is a single json record.
+   - Every usage json record is stored as a seperate record in elastic
+     search database.
+   - If the college cloud details registered with elastic search
+     database only then usages will be dumped into elastic search
+     database.
+
+#+NAME: add_usage_to_elk
+#+BEGIN_SRC python
+@api.route('/dump_usage_to_elastic_db', methods=['GET', 'POST'])
+def dump_usage_to_elk():
+    if request.method == 'GET':
+	return "Method not allowed"
+    if request.method == 'POST':
+	data_json = json.dumps(request.get_json())
+	data_dict = yaml.safe_load(data_json)
+
+	if 'usages' not in data_dict or 'mac_addr' not in data_dict or 'key' not in data_dict:
+	    abort(400, 'usages attribute or mac_addr or key attribute is not passed')
+
+        if data_dict['key'] != KEY:
+	    abort(401, 'Unauthorized to perform this operation')
+
+	usages = data_dict['usages']
+	mac_addr = data_dict['mac_addr']
+	key = data_dict['key']
+        mac_addr = str(data_dict['mac_addr'])
+        cc_details_elastic_db_url = "%s/college_cloud/details/id=%s" % (ELASTIC_DB_URL, mac_addr)
+        current_app.logger.debug("college cloud elastic db url : %s " % (cc_details_elastic_db_url))
+	
+	try:
+            r = requests.get(cc_details_elastic_db_url)	    
+	    if r.json()['found'] == False:
+		current_app.logger.debug("ELASTIC DB URL : %s " % (ELASTIC_DB_URL))
+		return jsonify({"status" : "failed", "error" : "College cloud is not registered"})
+	    else:
+		current_app.logger.debug("College Cloud Details : %s " % (r.json()))
+                college_name = str(r.json()['_source']['college_name'])
+		index_name = college_name + "_" + str(mac_addr)
+		doc_name = "usages"
+		current_app.logger.debug("index_name : %s, doc_name: %s " \
+                                     % (index_name, doc_name))
+
+		for usage in usages:
+		    if(post_data_to_elastic_search(index_name, doc_name, usage)):
+			current_app.logger.debug("Added usage : %s " % (usage))
+		    else:
+			current_app.logger.error("failed to add usage: %s " % (usage))
+			abort(500)
+
+		return jsonify({"status" : "success"})
+	except Exception as e:
+	    abort(500, str(e))
+#+END_SRC
+*** TestDumpUsageToElk
+#+NAME: test_dump_usages_details_to_elk
+#+BEGIN_SRC python
+class TestDumpUsageDetailsToElk(TestCase):
+      TESTING = True
+      def create_app(self):
+	  app = create_app(config)
+	  return app
+
+      def setUp(self):
+	  db.create_all()
+
+      def tearDown(self):
+	  db.session.remove()
+	  db.drop_all()
+
+      def test_dump_usage_details_to_elk(self):
+	  print "test_dump_usage_details_to_elk"
+	  payload = {
+	      'key' : KEY,
+              'mac_addr': "44:a8:42:f1:df:ef",
+	      'usages' : [
+		  {
+		      "LAB_ID": "CSE19",
+		      "DATE_OF_EXPERIMENT": "2017-01-04",
+		      "STUDENT_ID": "106ecd878f4148a5cabb6bbb0979b730",
+		      "REGION": "anonymous",
+		      "LAB_NAME": "Image Processing Lab",
+		      "EXPERIMENT_NAME": "Distance and Connectivity",
+		      "EXPERIMENT_ID": "E99751",
+		      "TIME_OF_EXPERIMENT": "16:38",
+		      "IP_ADDRESS": "10.100.1.7"
+		  }
+	      ]
+	  }
+
+	  headers = {'Content-Type': 'application/json'}
+
+	  response = self.client.post("/dump_usage_to_elastic_db", data=json.dumps(payload),
+				   headers=headers)
+
+	  self.assertEqual(response.status_code, 200)
+      
+#+END_SRC
+
+ 
+* WebApp
+
+** Index HTML
+#+BEGIN_SRC html :tangle ./templates/index.html :eval no :noweb yes
+
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>Feedback Portal</title>
+        <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico" />
+    </head>
+    <body onload="renderFeedbackform();">
+      <div id="header">
+        {% include 'header.html' %}     
+	<br><p>
+      <div class="row">
+        <hr style="background:#ff6600 !important;  height: 8px; margin-top: 0px;">
+      </div>
+      <div class="container">
+        <h1> Virtual Labs Feedback Form </h1>
+        <form class="form" id="feedback-form" onsubmit="submitFeedback(event)">
+          <div class="form-group" id="lab">
+            <label class="" id="lab_name_label"></label>
+            <label class="" id="lab_mandatory"></label>
+            <input class="form-control" id="lab_name_value" disabled="true">
+          </div>
+          <div class="form-group" id="exp">
+            <label class="" id="exp_name_label"></label>
+            <label class="" id="exp_mandatory"></label>
+            <input class="form-control" id="exp_name_value" disabled="true">
+          </div>
+          <div class="form-group" id="questions_list"></div>
+          <p>
+          <button class="btn btn-primary" >Submit</button>
+        </form>
+        <div align="right">
+	  <span id="version"></span>
+	</div>
+      </div>
+      <div id="footer">
+        {% include 'footer.html' %}
+        </div>
+      </div>
+    </body>
+    <script> var data = {{ questions_data|tojson }};</script> 
+    <script src="/static/js/jquery.min.js"></script>
+    <script type="text/javascript">
+    <<main-js>>        
+    </script>
+  </html>
+#+END_SRC
+
+
+** Error Page Template
+#+BEGIN_SRC html :tangle ./templates/error.html :eval no :noweb yes
+<html>
+<head>
+   <title>Error</title>
+</head>
+<body bgcolor="lightgrey">
+  <p><b>Error : </b>{{ data }}<p>
+</body>
+</html>
+
+#+END_SRC
+
+
+** Success Page Template
+  #+BEGIN_SRC html :tangle ./templates/success.html :eval no :noweb yes
+  <!DOCTYPE html>
+  <html>
+    <head>
+      <title>Feedback Portal</title>
+      <link rel = "stylesheet" href = "/static/css/main.css">
+      <link rel="icon" type="image/x-icon" href="/static/img/favicon.ico" />
+    </head>
+    <body>
+      <div id="header">
+        {% include 'header.html' %}        
+      <br><p>
+      <div class="row">
+        <hr style="background:#ff6600 !important;  height: 8px; margin-top: 0px;">
+      </div>
+      <br><br><br><br><br>
+      <h2 align="center"><font color="green">Thank you for the feedback</font></h2>
+      <br>
+      <h5 align="center"><font color="green">You may close this window</font></h5>
+    </body>
+  </html>
+
+#+END_SRC
+  
+
+** Header HTML
+#+BEGIN_SRC html :tangle ./templates/header.html :eval no :noweb yes
+<header>
+  <link rel = "stylesheet" href = "/static/css/main.css">
+  <link rel = "stylesheet" href = "/static/css/bootstrap.min.css">
+  <nav class="navbar navbar-default " style="background-color: white !important; margin-bottom: 0px !important; border : 0px;  !important">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header page-scroll">
+	<button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#bs-example-navbar-collapse-1">
+	  <span class="sr-only">Toggle navigation</span>
+	  <span class="icon-bar" style="background-color: #77BB41"></span>
+	  <span class="icon-bar" style="background-color: #77BB41"></span>
+	  <span class="icon-bar" style="background-color: #77BB41"></span>
+	</button>
+	<a class="navbar-brand main-logo-a" href="https://vlabs.ac.in"><img src="/static/img/logo.png"  style="width:6em" class="img-responsive main-logo" /></a>
+      </div>      
+      <div class="top-bar top-bar-header">
+	<div class="row">
+          <div class="col-md-12">            
+	    <div class="collapse navbar-collapse menu-div" id="bs-example-navbar-collapse-1" style="border: 0px; margin-top:-42px;">	      
+	      <ul class="nav navbar-nav navbar-left menu-ul" style="margin-top: 75px">
+		<li class="page-scroll menu-li ">
+		  <a href="http://vlabs.ac.in:5959/search_feature/disciplines/ElectronicsAndCommunications/index.html" class="menu-a">All Labs</a>
+		</li>
+		<li class="page-scroll menu-li ">
+                  <a href="https://vlabs.ac.in/courses" class="menu-a">All Labs on OpenedX</a>
+                </li>
+		<li class="page-scroll menu-li ">
+		  <a target="_blank" href="https://plus.google.com/communities/104131148292250423165" class="menu-a">Teachers' Community</a>		  
+		</li>		
+		<li class="page-scroll menu-li ">
+		  <a href="http://vlabs.ac.in:5959/workshops/" class="menu-a">Workshops</a>
+		</li>
+		<li class="page-scroll menu-li ">
+		  <a href="http://vlabs.ac.in:5959/college-cloud-edition/" class="menu-a">College Cloud Edition</a>
+		</li>		
+		<li class="page-scroll menu-li ">
+		  <a href="http://vlabs.ac.in:5959/contactus" class="menu-a">Contact</a>
+		</li>
+		<li class="page-scroll menu-li ">
+		  <a href="http://vlabs.ac.in:5959/faq/" class="menu-a">FAQ</a>
+		</li>		
+	      </ul>	      
+	    </div>	    
+          </div>
+	</div>
+      </div>      
+  </nav>
+</header>
+
+#+END_SRC
+   
+   
+** Footer HTML
+#+BEGIN_SRC html :tangle ./templates/footer.html :eval no :noweb yes
+<link rel="stylesheet" href="/static/css/style.css">
+<div class="container-fluid footer-div" style="background: #404040; margin-top: 40px;  padding: 20px;">
+  <div class="col-md-4 border-right-green-dotted">
+    <h2 class="text-h2-lightblue-small" style="font-weight: bold;margin-top: 0px; line-height:42px">UPDATES</h2>
+    <a href="http://community.virtual-labs.ac.in/w/index.php/Download" class="text-normal-gray-small nounderline" style="color: white" target="_blank"> Lab Integration Kit Releases</a><br>
+    <a href="http://community.virtual-labs.ac.in/w/index.php/First_Integration_workshop" class="text-normal-gray-small nounderline" style="color: white" target="_blank">First Integration Workshop at IIIT Hyderabad</a><br>
+    <a href="http://community.virtual-labs.ac.in/w/index.php/Summer_Sprint_Integration_workshop" class="text-normal-gray-small nounderline" style="color: white" target="_blank"> Summer Integration Workshop at IIT Guwahati</a><br>
+    <a href="http://community.virtual-labs.ac.in/w/index.php/QA/Integration_workshop" class="text-normal-gray-small nounderline" style="color: white" target="_blank"> QA Integration
+      Workshop at IIIT Hyderabad</a><br>
+    <a href="http://community.virtual-labs.ac.in/w/index.php/A_new_set_of_25_Virtual_Labs_on_Portable_Media" class="text-normal-gray-small nounderline" style="color: white" target="_blank"> A new set of 25 Virtual Labs on Portable Media</a>    
+  </div>
+  <div class="col-md-3 border-right-green-dotted" id="contact">
+    <a href="http://vlabs.ac.in:5959/contactus" class="text-normal-gray-small nounderline" style="color:white" target="_blank">Contact us</a><br>    
+    <a href="http://feedback.vlabs.ac.in/" class="text-normal-gray-small nounderline" style="color:white" target="_blank"> Feedback</a><br>
+    <a href="http://vlabs.ac.in:5959/licensing/" class="text-normal-gray-small nounderline" target="_blank" style="color:white; line-height:20px;"> Licensing</a>
+    <a href="https://plus.google.com/communities/104131148292250423165" class="text-normal-gray-small nounderline" target="_blank" style="color:white; line-height:40px;"> Teachers' Community</a>
+    <a href="http://209.211.220.205/labassessment/assessmentform.html" class="text-normal-gray-small nounderline" target="_blank" style="color:white;"> Lab Assessment Form</a><br>
+    <a href="http://vlabs.ac.in:5959/college-cloud-edition" class="text-normal-gray-small nounderline" style="color:white" target="_blank"> College Cloud Edition</a><br>
+    <a href="http://vlabs.ac.in:5959/workshops" class="text-normal-gray-small nounderline" style="color:white" target="_blank"> Expression of Interest for Workshop</a>
+  </div>
+  <div class="col-md-3 border-right-green-dotted">
+    <a href="http://vlabs.ac.in:5959/faq/" class="text-normal-gray-small nounderline" style="color: white"> FAQ</a><br>
+    <a href="http://community.virtual-labs.ac.in/w/index.php/Main_Page" class="text-normal-gray-small nounderline" style="color: white">Community</a><br>
+    <a href="http://outreach.virtual-labs.ac.in/ncentres" class="text-normal-gray-small nounderline" style="color: white"> Nodal Centers</a><br>
+    <a href="http://www.sakshat.ac.in/" class="text-normal-gray-small nounderline" style="color: white"> Sakshat Portal</a><br>
+    <a href="http://outreach.vlabs.ac.in/" class="text-normal-gray-small nounderline" style="color: white"> Outreach Portal</a><br>
+    <a href="http://vlabs.ac.in:5959/announcements/index.html" class="text-normal-gray-small nounderline" style="color: white"> Announcements</a><br>
+    <a href="http://209.211.220.205/vlabiitece/" class="text-normal-gray-small nounderline" style="color: white"> Labs Developed by Nodal Centers</a>
+  </div>
+  <div class="col-md-2">
+    <div class="social">			    
+      <ul class="social-share" style="margin-top:2em; margin-left:-5em;">
+	<ul>
+	  <li style="display:inline"><a target="_blank" href="https://www.facebook.com/pages/Virtual-Labs-IIT-Delhi/301510159983871"><img src="/static/img/fb.png"></a></li>
+          <li style="display:inline "><a href="https://twitter.com/TheVirtualLabs"><img src="/static/img/twitter.png"></a></li>
+          <li style="display:inline"><a target="_blank" href="https://in.linkedin.com/in/virtual-labs-008ba9136"><img src="/static/img/linkedin.png"></a></li>
+          <li style="display:inline"><a target="_blank" href="https://www.youtube.com/watch?v=mVBYNXLaDdg"><img src="/static/img/youtube.png"></a></li>
+	</ul>
+	<div><img class="poweredby" src="/static/img/logo-open-edx-powerdby.png"> </div>	
+    </ul>
+    </div>
+  </div>			
+</div>
+
+#+END_SRC
+
+   
+** JS
+#+NAME: main-js
+#+BEGIN_SRC javascript
+var feedbackForm = window.data;
+var labelQues, formGroup;
+console.log(feedbackForm);
+document.getElementById("version").innerHTML = "version : "+feedbackForm.version;
+function renderQuesLabel() {
+    formGroup = document.createElement("div");
+    formGroup.className = "form-group"
+    newline = document.createElement('p');
+    formGroup.appendChild(newline);
+    labelQues1 = document.createElement('label');
+    formGroup.appendChild(labelQues1);
+    labelQues = document.createElement('label');
+    $("#questions_list").append(formGroup);
+    formGroup.appendChild(labelQues);
+    labelQues2 = document.createElement('label');
+    formGroup.appendChild(labelQues2);
+
+}
+
+function renderFeedbackform() {
+    if(feedbackForm.lab_name){
+	$("#lab_name_label").html("Lab Name");
+	$("#lab_name_value").val(feedbackForm.lab_name)
+    }
+    else if(feedbackForm.version == "generic-lab-feedback-v2.0" || feedbackForm.version == "generic-exp-feedback-v2.0"){
+	$("#lab_name_label").html("Lab Name");
+	document.getElementById("lab_name_value").disabled = false;
+	document.getElementById("lab_name_value").required = true;
+	document.getElementById("lab_name_value").placeholder = "Enter Lab Name";
+	document.getElementById("lab_mandatory").innerHTML = "&nbsp;<font color='maroon'>*</font>";
+    }
+    else{
+	var elem = document.getElementById("lab_name_label");
+	elem.parentNode.removeChild(elem);
+	var elem1 = document.getElementById("lab_name_value");
+	elem1.parentNode.removeChild(elem1);
+
+    }
+    if(feedbackForm.exp_name){
+
+	$("#exp_name_label").html("Experiment Name");
+	$("#exp_name_value").val(feedbackForm.exp_name);
+    }
+    else if(feedbackForm.version == "generic-exp-feedback-v2.0"){
+	$("#exp_name_label").html("Experiment Name");
+	document.getElementById("exp_name_value").disabled = false;
+	document.getElementById("exp_name_value").required = true;
+	document.getElementById("exp_name_value").placeholder = "Enter Experiment Name";
+	document.getElementById("exp_mandatory").innerHTML = "&nbsp;<font color='maroon'>*</font>";
+    }
+    else if(feedbackForm.version == "generic-feedback-v2.0"){
+           var elem = document.getElementById("lab");
+           elem.parentNode.removeChild(elem);
+           var elem1 = document.getElementById("exp");
+    	    elem1.parentNode.removeChild(elem1);
+    }
+    else
+	{
+	    var elem = document.getElementById("exp");
+	    elem.parentNode.removeChild(elem);
+	}
+
+    var quesArray = feedbackForm.questions.length;
+    for (var i = 0; i < quesArray; i++) {
+	if (feedbackForm.questions[i].type === "checkbox") {
+	    renderQuesLabel();
+	    labelQues.innerHTML = feedbackForm.questions[i].name;
+	    var optionsDiv = document.createElement("div");
+	    optionsDiv.id = feedbackForm.questions[i].name;
+	    var optionsLength = feedbackForm.questions[i].options.length;
+
+	    for (var j = 0; j < optionsLength; j++) {
+		checkOption = document.createElement('input');
+		checkOption.type = "checkbox";
+		checkOption.value = feedbackForm.questions[i].options[j];
+
+		ansLabel = document.createElement('label');
+		ansLabel.className = "checkbox-inline"
+		ansLabel.innerHTML = feedbackForm.questions[i].options[j];
+
+		optionsDiv.appendChild(ansLabel);
+		ansLabel.insertBefore(checkOption, ansLabel.firstChild);
+		formGroup.appendChild(optionsDiv);
+		questions_list.appendChild(formGroup);
+	    }
+	}
+
+	else if(feedbackForm.questions[i].type === "radio") {
+	    renderQuesLabel();
+	    labelQues1.innerHTML = feedbackForm.questions[i].id+".&nbsp;&nbsp;";
+	    labelQues.innerHTML = feedbackForm.questions[i].name;
+	    if(feedbackForm.questions[i].mandatory == "Yes"){
+		labelQues2.innerHTML = "&nbsp;<font color='maroon'>*</font>";
+	    }
+
+	    var optionsDiv1 = document.createElement("div");
+	    optionsDiv1.id = feedbackForm.questions[i].id;
+	    var optionsLength = feedbackForm.questions[i].options.length;
+	    function GenerateTable(arg1, arg2, arg3, table_id) {
+		var customers = new Array();
+		customers.push([arg1, arg2, arg3]);
+
+		//Create a HTML Table element.
+		var table = document.createElement("TABLE");
+		table.border = "0";
+
+		//Get the count of columns.
+		var columnCount = customers[0].length;
+
+		//Add the header row.
+		var row = table.insertRow(-1);
+		for (var i = 0; i < columnCount; i++) {
+		    var headerCell = document.createElement("Td");
+		    headerCell.innerHTML = customers[0][i];
+		    row.appendChild(headerCell);
+		}
+		var dvTable = document.getElementById(table_id);
+		dvTable.innerHTML = "";
+		dvTable.appendChild(table);
+	    }
+            if(i == 2 && (feedbackForm.version == "generic-feedback-v2.0")){
+    
+    	      //renderQuesLabel();
+    		labelQues = document.createElement('div');
+    		labelQues.id="dvTable1";
+    		formGroup.appendChild(labelQues);
+    		GenerateTable("Not at all", "To some extent", "Very well","dvTable1");
+    	    }
+	    else if(i == 4 && (feedbackForm.version == "open-edx-virtual-labs-v2.0_for_experiment" || feedbackForm.version == "generic-exp-feedback-v2.0") || i == 1 && (feedbackForm.version == "open-edx-virtual-labs-v2.0_for_lab" || feedbackForm.version == "generic-lab-feedback-v2.0" )){
+	      //  renderQuesLabel();
+		labelQues = document.createElement('div');
+		labelQues.id="dvTable";
+		formGroup.appendChild(labelQues);
+		GenerateTable("Not at all", "To some extent", "Very well", "dvTable");
+	    }
+
+
+	    else if(i == 6 && (feedbackForm.version == "open-edx-virtual-labs-v2.0_for_experiment" || feedbackForm.version == "generic-exp-feedback-v2.0") || i == 4 && (feedbackForm.version == "open-edx-virtual-labs-v2.0_for_lab" || feedbackForm.version == "generic-lab-feedback-v2.0")){
+
+	      //renderQuesLabel();
+		labelQues = document.createElement('div');
+		labelQues.id="dvTable1";
+		formGroup.appendChild(labelQues);
+		GenerateTable("Not at all", "To some extent", "Very well","dvTable1");
+	    }
+
+	    else if(i == 7 && (feedbackForm.version == "open-edx-virtual-labs-v2.0_for_experiment" || feedbackForm.version == "generic-exp-feedback-v2.0") || i == 5 && (feedbackForm.version == "open-edx-virtual-labs-v2.0_for_lab" || feedbackForm.version == "generic-lab-feedback-v2.0")){
+
+	      //  renderQuesLabel();
+		labelQues = document.createElement('div');
+		labelQues.id="dvTable2";
+		formGroup.appendChild(labelQues);
+		GenerateTable("Not at all", "May Recommend", "Will definitely","dvTable2");
+	    }
+	    function answer(flag, question_id){
+		if(flag == "No"){
+		    var element = document.getElementById("answer");
+		    if(element != null){
+			element.outerHTML = "";
+			delete element;
+		    }
+		}
+		else{
+		    if(document.getElementById("answer") == null){
+			var div = document.getElementById(question_id);
+			var answer = document.createElement('div');
+			answer.id = "answer";
+			div.appendChild(answer);
+			labelQues = document.createElement('br');
+			var answer_id = document.getElementById("answer");
+			answer_id.appendChild(labelQues);
+
+			ansTextArea = document.createElement("textarea");
+			ansTextArea.className = "form-control";
+			ansTextArea.style.width = "35em";
+			ansTextArea.style.height = "7em";
+			ansTextArea.id = "bug-answer";
+			ansTextArea.placeholder = "Please specify the bug details here";
+			ansTextArea.maxLength = "160";
+			answer_id.appendChild(ansTextArea);
+
+		    }
+		}
+
+	    }
+	    function driver(questions, value, flag){
+		for(var i=0; i<questions.length;i++){
+		    var questionElement = document.getElementById(questions[i]);
+		    var children = questionElement.querySelectorAll('input');
+		    for(var j = 0; j < children.length; j++) {
+			var child = children[j];
+
+			if(flag == "false"){
+			    child.checked = false;
+
+			}
+			else if(flag == "true" && child.value == value){
+			    child.checked = true;
+			}
+
+		    }
+
+		}
+	    }
+
+	    for (var k = 0; k < optionsLength; k++) {
+
+		radioOption = document.createElement('input');
+		radioOption.type = "radio";
+		radioOption.className = "";
+		
+		if(i == 0 && k == 0){
+		    radioOption.checked = true;
+		}
+		if(i == 1 && k == 0 && feedbackForm.questions[i].driver.length!=0){
+		    var questions = feedbackForm.questions[i].driver;
+		    radioOption.onclick = function(){driver(questions, 'Not applicable', 'false'); };
+		}
+		if(i == 1 && k == 1  && feedbackForm.questions[i].driver.length!=0){
+		    var questions = feedbackForm.questions[i].driver;
+		    radioOption.onclick = function(){ driver(questions, 'Not applicable', 'true'); };
+		}
+		if(feedbackForm.questions[i].linked_answer == "Yes" && k == 0){
+		    var id = feedbackForm.questions[i].id;
+		    radioOption.onclick = function(){ answer("Yes", id); };
+		}
+		if(feedbackForm.questions[i].linked_answer == "Yes" && k == 1){
+		    var id = feedbackForm.questions[i].id;
+		    radioOption.onclick = function(){ answer("No", id); };
+		}
+		if(feedbackForm.questions[i].linked_answer == "Yes" && k == 2){
+		    var id = feedbackForm.questions[i].id;
+		    radioOption.onclick = function(){ answer("No", id); };
+		}
+		radioOption.name = feedbackForm.questions[i].name;
+		radioOption.value = feedbackForm.questions[i].options[k];
+		radioLabel = document.createElement('label');
+		radioLabel.className = "radio-inline";
+		radioLabel.innerHTML = feedbackForm.questions[i].options[k];
+
+		optionsDiv1.appendChild(radioLabel);
+		radioLabel.insertBefore(radioOption, radioLabel.firstChild);
+		formGroup.appendChild(optionsDiv1);
+		questions_list.appendChild(formGroup);
+	    }
+
+	}
+	else if (feedbackForm.questions[i].type === "textarea") {
+	    var ansTextArea;
+	    renderQuesLabel();
+	    labelQues.innerHTML = feedbackForm.questions[i].name;
+	    labelQues1.innerHTML = feedbackForm.questions[i].id+".&nbsp;&nbsp;";
+	    if(feedbackForm.questions[i].mandatory == "Yes"){
+		labelQues2.innerHTML = "&nbsp;<font color='maroon'>*</font>";
+	    }
+	    ansTextArea = document.createElement("textarea");
+	    ansTextArea.className = "form-control";
+	    ansTextArea.id = feedbackForm.questions[i].id;
+	    ansTextArea.style.width = "38em";
+	    ansTextArea.style.height = "6em";
+	    ansTextArea.maxLength = "160";
+
+	    formGroup.appendChild(ansTextArea);
+	    
+	}
+	else if(feedbackForm.questions[i].type === "text") {
+	    var ansTextBox;
+	    renderQuesLabel();
+	    labelQues.innerHTML = feedbackForm.questions[i].name;
+	    labelQues1.innerHTML = feedbackForm.questions[i].id+".&nbsp;&nbsp;";
+	    if(feedbackForm.questions[i].mandatory == "Yes"){
+		labelQues2.innerHTML = "&nbsp;<font color='maroon'>*</font>";
+	    }
+	    ansTextBox = document.createElement("input");
+	    ansTextBox.className = "form-control"
+	    ansTextBox.placeholder = feedbackForm.questions[i].placeholder;
+	    ansTextBox.style.width = "25em";
+	    ansTextBox.id = feedbackForm.questions[i].id;
+	    formGroup.appendChild(ansTextBox);
+	}
+
+    }
+}
+
+function submitFeedback(event) {
+
+    event.preventDefault();
+    var feedback = {}; // the final feedback object
+    if(feedbackForm.lab_name){
+	feedback.lab_name = feedbackForm.lab_name;
+    }
+    if(feedbackForm.exp_name){
+	feedback.exp_name = feedbackForm.exp_name;
+    }
+    if(feedbackForm.user_id){
+    feedback.user_id = feedbackForm.user_id;
+    }
+    feedback.version = feedbackForm.version;
+    if(feedbackForm.key){
+	feedback.key = feedbackForm.key;
+    }
+    if(document.getElementById("lab_name_value")){
+	feedback.lab_name = document.getElementById("lab_name_value").value;
+    }
+    if(document.getElementById("exp_name_value")){
+	feedback.exp_name = document.getElementById("exp_name_value").value;
+    }
+    feedback.responses = []; // the list of questions and user answers
+    var quesArray = feedbackForm.questions.length;
+    // loop over the questions
+    for (var i = 0; i < quesArray; i++) {
+	var questionElement = document.getElementById(feedbackForm.questions[i].id);
+	var answer = null;
+	if(feedbackForm.questions[i].type === 'radio') {
+	    answer = []
+	    var children = questionElement.querySelectorAll('input');
+	    for(var j = 0; j < children.length; j++) {
+		var child = children[j];
+		// console.log('child', child, child.type, child.checked);
+		if(child.type === 'radio' && child.checked === true) {
+
+		    if(children.length == 10){
+			var ans = child.value + "/"+ String(Number(children.length))
+			answer.push(ans);
+		    }
+		    else if(children.length == 11){
+                        var ans = child.value;
+			if(ans != "Not applicable"){
+			    var ans = child.value + "/"+ String(Number(children.length)-1)
+			    answer.push(ans);
+			}
+			else{
+			    answer.push(ans);
+			}
+		    }
+
+		    else{
+			if(i == 2 ){
+			    if(document.getElementById("bug-answer") != null){
+				var text = document.getElementById("bug-answer").value;
+				console.log(text);
+				answer.push(text);
+			    }
+			}
+			answer.push(child.value);
+		    }
+
+		}
+	    }
+	}
+	else if(feedbackForm.questions[i].type === 'checkbox') {
+	    answer = [];
+	    var children = questionElement.querySelectorAll('input');
+	    for(var j = 0; j < children.length; j++) {
+		var child = children[j];
+		if(child.checked === true) {
+		    // console.log('selected', child.value);
+		    answer.push(child.value);
+		}
+	    }
+	}
+	else if(feedbackForm.questions[i].type === 'textarea') {
+	    answer = [];
+	    var input = questionElement;
+	    answer.push(input.value);
+	}
+	else if(feedbackForm.questions[i].type === 'text') {
+	    answer = [];
+	    var input = questionElement;
+	    //console.log(input);
+	    answer.push(input.value);
+	}
+	// create an object to insert the current question data
+	var question = {};
+	question.name = feedbackForm.questions[i].name;
+	//question.type = feedbackForm.questions[i].type;
+	question.answers = answer;
+	feedback.responses.push(question);
+    }
+    // Posting json data to /feedback api
+
+    console.log(feedback);
+    function add_feedback(){
+	$.ajax({
+	    url: '/feedback',
+	    type: 'POST',
+	    data: JSON.stringify(feedback),
+	    contentType: 'application/json',
+	    success: function (data) {
+		window.location.href="/success";
+		console.log(data);
+	    },
+
+	    error: function(data){
+		//alert("error");
+		console.log("Error in submitted feedback");
+		console.log(data); 
+	    }
+
+	});  
+    }
+    function add_generic_feedback(){
+	$.ajax({
+	    url: '/',
+	    type: 'POST',
+	    data: JSON.stringify(feedback),
+	    contentType: 'application/json',
+	    success: function (data) {
+		window.location.href="/success";
+		console.log(data);
+	    },
+
+	    error: function(data){
+		//alert("error");
+		console.log("Error in submitted feedback");
+		console.log(data); 
+	    }
+
+	});  
+    }
+    var count = 0;
+    var not_answered = []
+    for(var i=0;i<feedback.responses.length;i++){
+	if(feedbackForm.questions[i].mandatory == "Yes" && (feedback.responses[i].answers.length == 0 || feedback.responses[i].answers[0] == "")){
+	    //alert("Some of the questions are not answered");
+	    //alert("Quesion No " + (i+1) +" is not answered");
+	    count++;
+	    not_answered.push(i+1);
+//	      break;
+	}
+    }
+    if(count == 0){
+	if(feedbackForm.version == "generic-feedback-v2.0" || feedbackForm.version == "generic-exp-feedback-v2.0" || feedbackForm.version == "generic-lab-feedback-v2.0"){
+	    add_generic_feedback();
+	    }
+	else{
+	    add_feedback();
+	}
+    }
+    else{
+	alert(not_answered + " Question(s) are not answered");
+    }
+
+
+}
+    
+#+END_SRC
+   
+   
+** CSS 
+#+BEGIN_SRC css :tangle ./static/css/main.css :eval no :noweb yes
+body {
+    font-family:'Raleway' !important;
+    overflow-x: hidden;
+#    font-family:  sans-serif;
+    font-size: 14px;
+    color: #767676;
+}
+
+#feedback-form {
+    width: 80%;
+    margin-top: 30px;
+}
+
+.headInfo {
+    margin-left: 0px; 
+    margin-top: 20px;
+}
+
+.values {
+    margin-left: 0px;
+    text-align: left;
+}
+
+.rowCol {
+    border: 1px solid #ccc
+}
+
+.mainrow {
+    margin-top: 4px;
+}
+
+.navbar-default, .navbar-inverse {
+    border: 0;
+}
+
+.footer-div
+{
+    margin-top:120px;
+}
+
+.main-logo-a {
+    height: auto;
+    overflow: visible;
+    margin-left: 0px !important;
+    padding-bottom: 10px !important;
+    padding-top: 10px !important;
+}
+
+.menu-a {
+    font-size: 14px !important;
+    font-family: 'Raleway' !important;
+    color: #2C99CD !important;
+    padding-left: 10px !important;
+    padding-bottom: 5px !important;
+    padding-top: 5px !important;
+    padding-right: 10px !important;
+}
+
+.menu-a-active {
+    color: white !important;
+}
+
+.menu-li {
+    border-radius: 10px;
+    margin-left: 20px;
+    margin-right: 20px;
+}
+
+.menu-li:HOVER {
+    background-color: #77BB41 !important;
+}
+
+.menu-a:HOVER {
+    color: white !important;
+}
+
+.menu-li-active {
+    background-color: #77BB41;
+}
+
+.menu-ul {
+    margin-top: 45px;
+}
+
+.text-h2-lightblue-small
+{
+	color: #2C99CE;
+	font-size: 1.5em;
+}
+.text-a-lightgreen
+{
+	color: #72AB44;
+	font-size: 1.3em;
+	text-decoration: underline;
+}
+
+.text-a-lightgreen:HOVER
+{
+	color: #72AB44 !important;
+}
+
+.text-normal-gray-small
+{
+	color: #888;
+	font-size: 16px;
+}
+
+.border-right-green-dotted
+{
+	border-right: 2px dotted;
+	 margin-top: 30px;
+	 border-right-color: #678f48;
+	 min-height: 115px;
+}
+.footer-div
+{
+margin-top:120px;
+}
+table {
+    font-family: arial, sans-serif;
+    border-collapse: collapse;
+    width: 32em;
+}
+
+td {
+    border: 0px solid #dddddd;
+    text-align: left;
+    padding: 8px;
+}
+
+tr:nth-child(even) {
+    background-color: #dddddd;
+}
+
+
+#+END_SRC
+
+   
+* Infra                                                         :boilerplate:
+
+** sources
+*** Imports 
+#+name: imports_for_sources
+#+BEGIN_SRC python
+# -*- coding: utf-8 -*-
+import os
+import requests
+import json
+from flask import session, render_template, Blueprint, request, \
+     jsonify, abort, current_app, redirect, url_for
+from flask import Flask
+from runtime.utils.type_utils import jsonify_list
+from runtime.config.system_config import KEY
+from runtime.exceptions.custom_exceptions import *
+from runtime.system.system_interface import SystemInterface
+from runtime.config.flask_app_config import GENERIC_FEEDBACK_VERSION,\
+     GENERIC_LAB_FEEDBACK_VERSION, GENERIC_EXP_FEEDBACK_VERSION, ELASTIC_DB_URL
+
+import yaml
+
+api = Blueprint('APIs', __name__)
+
+#+end_src
+
+
+** tests
+*** Imports 
+#+name: imports_for_tests
+#+BEGIN_SRC python
+# -*- coding: utf-8 -*-
+import unittest
+from flask_testing import TestCase
+from sqlalchemy.exc import IntegrityError
+from runtime.utils.class_persistence_template import db
+from runtime.rest.app import create_app
+from runtime.config.system_config import KEY
+from runtime.rest.api import *
+from runtime.system.system import System
+import datetime
+config = {
+         'SQLALCHEMY_DATABASE_URI': ''
+         }
+
+#+end_src
+
+*** Running tests
+#+NAME: run_test_cases
+#+BEGIN_SRC python
+if __name__ == '__main__':
+    unittest.main()
+
+#+END_SRC
+
+
+* Tangle                                                        :boilerplate:
+
+** sources
+#+BEGIN_SRC python :tangle api.py :eval no :noweb yes
+<<imports_for_sources>>
+<<get_add_generic_feedback>>
+<<get_add_generic_lab_exp_feedback>>
+<<get_success_template>>
+<<get_add_feedback>>
+<<get_feedback_usage>>
+<<get_feedback_dump>>
+<<get_gateway_ip>>
+<<get_and_add_question>>
+<<update_and_delete_question>>
+<<get_and_add_feedback_to_elk>>
+<<get_and_add_usage_to_elk>>
+<<add_feedback_to_elastic_db>>
+<<add_college_details_to_elk>>
+<<add_usage_to_elk>>
+#+END_SRC
+
+
+** tests
+#+BEGIN_SRC python :tangle test_api.py :eval no :noweb yes
+<<imports_for_tests>>
+<<test_get_generic_feedback>>
+<<test_get_generic_lab_and_exp_feedback>>
+<<test_add_generic_feedback>>
+<<test_get_feedback>>
+<<test_add_feedback>>
+<<test_get_feedback_usage>>
+<<test_get_feedback_dump>>
+<<test_add_question>>
+<<test_update_question>>
+<<test_delete_question>>
+<<test_get_questions>>
+<<test_feedback_details_to_elk>>
+<<test_dump_college_details_to_elk>>
+<<test_dump_usages_details_to_elk>>
+<<test_feedback_details_to_elk>>
+<<run_test_cases>>
+#+end_src
+

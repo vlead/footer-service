@@ -1,0 +1,27 @@
+#+TITLE: Runtime of Application
+#+AUTHOR: VLEAD
+#+DATE: [2016-06-07 Tue]
+#+SETUPFILE: ../org-templates/level-1.org
+#+TAGS: boilerplate(b)
+#+EXCLUDE_TAGS: boilerplate
+#+OPTIONS: ^:nil
+
+The =runtime= of the application is defined by:
+
+ 1. [[./objects/index.org][=Objects=]]  
+
+ 2. [[./persistence/index.org][=Persistence=]]
+
+ 3. [[./system/index.org][=System=]]
+
+ 4. [[./rest/index.org][=REST API=]]
+
+ 5. [[./utils/index.org][=Utilities=]]
+
+ 6. [[./exceptions/custom_exceptions.org][=Exceptions=]]
+
+
+* Tangle                                       :boilerplate:
+#+BEGIN_SRC python :eval no :tangle __init__.py
+print "runtime package"
+#+END_SRC

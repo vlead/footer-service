@@ -1,0 +1,121 @@
+
+{
+  "lab": {
+    "description": {
+      "name": "Footer Service",
+      "id": "footerv1",
+      "status": "working code",
+      "lab integration kit releases": "http://community.virtual-labs.ac.in/w/index.php/Download",
+      "First Integration Workshop at IIIT Hyderabad": "http://community.virtual-labs.ac.in/w/index.php/First_Integration_workshop",
+      "Summer Integration Workshop at IIT Guwahati": "http://community.virtual-labs.ac.in/w/index.php/Summer_Sprint_Integration_workshop",
+      "QA Integration Workshop at IIIT Hyderabad": "http://community.virtual-labs.ac.in/w/index.php/QA/Integration_workshop",
+      "College Cloud Edition Workshop at IIIT Hyderabad": "http://community.vlabs.ac.in/docs/workshop-reports/report.html",
+      "A new set of 25 Virtual Labs on Portable Media": "http://community.virtual-labs.ac.in/w/index.php A_new_set_of_25_Virtual_Labs_on_Portable_Media",
+      "Contact us": "http://vlabs.ac.in:5959/contactus/",
+      "Feedback": "http://feedback.vlabs.ac.in/",
+      "Licensing": "http://vlabs.ac.in:5959/licensing/",
+      "Teachers' Community": "https://plus.google.com/communities/104131148292250423165",
+      "Lab Assessment Form": "http://209.211.220.205/labassessment/assessmentform.html",
+      "College Cloud Edition": "http://vlabs.ac.in:5959/college-cloud-edition/",
+      "Expression of Interest for Workshop": "http://vlabs.ac.in:5959/workshops/",
+      "FAQ": "http://vlabs.ac.in:5959/faq/",
+      "Community": "http://community.virtual-labs.ac.in/w/index.php/Main_Page",
+      "Nodal Centers": "http://outreach.virtual-labs.ac.in/ncentres",
+      "Sakshat Portal": "http://www.sakshat.ac.in/",
+      "Outreach Portal": "http://outreach.virtual-labs.ac.in/",
+      "Announcements": "http://vlabs.ac.in:5959/announcements/index.html",
+      "Labs Developed by Nodal Centers": "http://209.211.220.205/vlabiitece/",
+      "server-side": true,
+     
+      "developer": [
+        {
+          "name": "Sanchita Dixit",
+          "title": "",
+          "role": "Project Engineer",
+          "organization": "VLEAD",
+          "institute": "IIIT Hyderabad",
+          "web": "",
+          "department": "Software Engg Research Centre (SERC)",
+          "contact": {
+            "email": "sanchita@vlabs.ac.in",
+            "alternate_email": "dixit.sanchita90@gmail.com",
+            "mobile_number": "",
+            "office_number": ""
+          }
+        },
+	{
+          "name": "Reena Madamwar",
+          "title": "",
+          "role": "Project Engineer",
+          "organization": "VLEAD",
+          "institute": "IIIT Hyderabad",
+          "web": "",
+          "department": "Software Engg Research Centre (SERC)",
+          "contact": {
+            "email": "reena@vlabs.ac.in",
+            "alternate_email": "",
+            "mobile_number": "",
+            "office_number": ""
+          }
+        }
+      ]
+     },
+    "build_requirements": {
+      "platform": {
+        "os": "ubuntu",
+        "osVersion": "12",
+        "arch": "x64",
+        "service_pack": "",
+        "installer": [
+        ],
+        "build_steps": {
+          "configure": [],
+          "pre_build": [],
+          "build": [
+            "cd ../;make build"
+          ],
+          "post_build": [
+            "cp -R ../build/code/* /var/www/",
+            "chmod -R 755 /var/www",
+            "mkdir /var/www/logs",
+            "chmod -R 777 /var/www/logs"
+          ],
+          "status": []
+        }
+      }
+    },
+    "runtime_requirements": {
+      "platform": {
+        "os": "ubuntu",
+        "osVersion": "12",
+        "arch": "x64",
+        "servicepack": "",
+        "hosting": "dedicated",
+        "memory": {
+          "max_required": "4gb",
+          "min_required": "2gb"
+        },
+        "storage": {
+          "min_required": "10gb"
+        },
+        "installer": [
+          "bash /var/www/deployment/setup.sh",
+          "python /var/www/deployment/setup.py install",
+          "bash /var/www/deployment/configure.sh"
+        ],
+        "lab_actions": {
+          "init"    : [],
+          "shutdown": [],
+          "pause"   : [],
+          "resume"  : [],
+          "start"   : [],
+          "stop"    : [],
+          "clean"   : [],
+          "stats"   : [],
+          "publish" : []
+        }
+      }
+    }
+  },
+  "template": "1.0"
+}
