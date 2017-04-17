@@ -23,7 +23,7 @@ This holds the application's configuration parameters.
 
 
 
-feedback_forms = [
+footer_service = [
     {'version': 'open-edx-virtual-labs-v2.0_for_experiment',
      'questions': [
          {'id' : '1', 'name': 'Designation', 'type': 'radio',

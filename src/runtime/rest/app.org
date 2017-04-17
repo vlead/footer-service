@@ -39,8 +39,8 @@ def create_app(config):
 * Configure System
 #+NAME: configure_system
 #+BEGIN_SRC python
-def configure_system():
-    SystemInterface.initialize(PersistenceDelegate)
+#def configure_system():
+#    SystemInterface.initialize(PersistenceDelegate)
 
 #+END_SRC
 
