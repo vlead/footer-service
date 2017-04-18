@@ -12,6 +12,9 @@ The =utils= package hold the following modules
 
  2. [[./class-templates.org][=class_templates=]]
 
+ 3. [[./class-persistence.org][=class_persistence_template=]]
+
+
 * Tangle                          :boilerplate:
 #+BEGIN_SRC python :eval no :tangle __init__.py
 print "utils package"

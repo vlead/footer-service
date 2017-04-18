@@ -30,7 +30,7 @@ def create_app(config):
     configure_errorhandlers(app)
     #  configure_cors(app)
     # all set; return app object
-    configure_system()
+#    configure_system()
     return app
 
 #+END_SRC

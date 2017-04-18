@@ -17,26 +17,11 @@
      + exceptions
        + [[file:runtime/exceptions/custom_exceptions.org][Custom Exceptions]]
        + [[file:runtime/exceptions/index.org][The =exceptions= Package]]
-     + objects
-       + [[file:runtime/objects/entities.org][Entities]]
-       + [[file:runtime/objects/index.org][The =objects= Package]]
-     + persistence
-       + [[file:runtime/persistence/entities.org][Persistent Entities]]
-       + [[file:runtime/persistence/index.org][The =persistence= Package]]
      + rest
        + [[file:runtime/rest/index.org][REST Interface for Mini Version of User Directory Application]]
        + [[file:runtime/rest/app.org][The Flask Web Server]]
        + [[file:runtime/rest/api.org][The REST API]]
-     + system
-       + [[file:runtime/system/object-delegate.org][Object Delegate for the System]]
-       + [[file:runtime/system/persistence-delegate.org][Persistence Delegate for the System]]
-       + [[file:runtime/system/system-interface.org][System Interface implementation for Feedback Portal]]
-       + [[file:runtime/system/system.org][System implementation for Feedback Portal]]
-       + [[file:runtime/system/system-with-persistence.org][Test System with Persistence]]
-       + [[file:runtime/system/system-with-object.org][Test System with object implementation for OutReach Portal 3.0]]
-       + [[file:runtime/system/index.org][The =System= Package]]
      + utils
-       + [[file:runtime/utils/class-persistence.org][Class Persistence]]
        + [[file:runtime/utils/class-templates.org][Class Templates]]
        + [[file:runtime/utils/index.org][The =utils= Package]]
        + [[file:runtime/utils/type-utils.org][Type Predicates and Checks]]
