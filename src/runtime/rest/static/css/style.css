@@ -686,11 +686,12 @@ margin-top:120px;
 .border-right-green-dotted
 {
 	border-right: 2px dotted;
-	 margin-top: 30px;
-	 border-right-color: #678f48;
-	 min-height: 115px;
-	line-height:1em;
-	height:19em;
+        padding: 0px 135px 0 26px;
+	margin-top: 30px;
+	border-right-color: #678f48;
+	min-height: 115px;
+	height:210px;
+        float: left;
 
 	
 }
@@ -698,7 +699,7 @@ margin-top:120px;
 	/*padding-left: 10px;*/
 	display: block;
 	/*margin-bottom: 10px;*/
-	line-height:1.2em;
+	line-height:0.2em;
 }
 a:focus
 {
@@ -713,9 +714,9 @@ a:focus
 position: relative;
 width: 40%;
 height: 100%;
-padding-top: 67px;
+padding-top: 55px;
 /*top: 50px;*/
-left: 96px;
+left: 185px;
 }
 
 .handpointer{cursor: pointer;
