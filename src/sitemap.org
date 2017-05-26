@@ -22,6 +22,7 @@
        + [[file:runtime/rest/app.org][The Flask Web Server]]
        + [[file:runtime/rest/api.org][The REST API]]
      + utils
+       + [[file:runtime/utils/class-persistence.org][Class Persistence]]
        + [[file:runtime/utils/class-templates.org][Class Templates]]
        + [[file:runtime/utils/index.org][The =utils= Package]]
        + [[file:runtime/utils/type-utils.org][Type Predicates and Checks]]
