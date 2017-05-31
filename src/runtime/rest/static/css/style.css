@@ -714,9 +714,9 @@ a:focus
 position: relative;
 width: 40%;
 height: 100%;
-padding-top: 55px;
-/*top: 50px;*/
-left: 185px;
+/*padding-top: 55px;
+top: 50px;
+left: 185px;*/
 }
 
 .handpointer{cursor: pointer;
