@@ -39,4 +39,4 @@ make
 #+END_SRC
 
 
-- Follow the  [[https://github.com/vlead/footer-service/blob/develop/src/deployment/run-footer-in-developement-environment.org#running-footer-service-on-developement-environment][Documentation]] to setup developement environment.
+- Follow the  [[https://github.com/vlead/footer-service/blob/develop/src/deployment/run-feedback-in-development-environment.org][Documentation]] to setup developement environment.
