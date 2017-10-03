@@ -139,7 +139,8 @@ class TestGetFooter(TestCase):
 * WebApp
 
 ** Footer HTML
-#+BEGIN_SRC html :tangle ./templates/index.html :eval no :noweb yes
+#+NAME: footer
+#+BEGIN_SRC html
  
   <!DOCTYPE html>
   <html>
@@ -392,11 +393,18 @@ if __name__ == '__main__':
 * Tangle                                                        :boilerplate:
   
 ** sources
+*** Python
 #+BEGIN_SRC python :tangle api.py :eval no :noweb yes
 <<imports_for_sources>>
 <<get_footer>>
+
 #+END_SRC
 
+*** HTML
+#+BEGIN_SRC html :tangle /templates/footer.html :eval no :noweb yes
+<<footer>>
+
+#+END_SRC
 
 ** tests
 #+BEGIN_SRC python :tangle test_api.py :eval no :noweb yes
