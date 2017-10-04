@@ -184,14 +184,14 @@ class TestGetFooter(TestCase):
          <div><a href="#" class="text-a-lightgreen" style="text-decoration: underline;" > REGISTRATION</a></div>
          <div><a href="#" class="text-a-lightgreen" style="text-decoration: underline;" > LOGIN</a></div> -->
       <!-- <div><a href="#" class="text-a-lightgreen" style="text-decoration: underline;" > Outreach Portal</a></div> -->
-      <a href="https://info.vlabs.ac.in/faq/" class="text-normal-gray-small nounderline" style="color: white"> FAQ</a><br>
-      <a href="http://www.sakshat.ac.in/" class="text-normal-gray-small nounderline" style="color: white"> Sakshat Portal</a><br>
-      <a href="http://outreach.vlabs.ac.in/" class="text-normal-gray-small nounderline" style="color: white"> Outreach Portal</a><br>
+      <a target="_blank" href="https://info.vlabs.ac.in/faq/" class="text-normal-gray-small nounderline" style="color: white"> FAQ</a><br>
+      <a target="_blank" href="http://www.sakshat.ac.in/" class="text-normal-gray-small nounderline" style="color: white"> Sakshat Portal</a><br>
+      <a target="_blank" href="http://outreach.vlabs.ac.in/" class="text-normal-gray-small nounderline" style="color: white"> Outreach Portal</a><br>
       <!--<a href="http://community.virtual-labs.ac.in/w/index.php/Main_Page" class="text-normal-gray-small nounderline" style="color: white">Community</a><br>-->
-      <a href="http://outreach.virtual-labs.ac.in/ncentres" class="text-normal-gray-small nounderline" style="color: white"> Nodal Centers</a><br>
-      <a href="https://info.vlabs.ac.in/announcements/index.html" class="text-normal-gray-small nounderline" style="color: white"> Announcements</a><br>
-      <a href="http://209.211.220.205/labassessment/assessmentform.html" class="text-normal-gray-small nounderline" target="_blank" style="color:white;"> Lab Assessment Form</a><br>
-      <a href="http://209.211.220.205/vlabiitece/" class="text-normal-gray-small nounderline" style="color: white"> Labs Developed by Nodal Centers</a>
+      <a target="_blank" href="http://outreach.virtual-labs.ac.in/ncentres" class="text-normal-gray-small nounderline" style="color: white"> Nodal Centers</a><br>
+      <a target="_blank" href="https://info.vlabs.ac.in/announcements/index.html" class="text-normal-gray-small nounderline" style="color: white"> Announcements</a><br>
+      <a target="_blank" href="http://209.211.220.205/labassessment/assessmentform.html" class="text-normal-gray-small nounderline" target="_blank" style="color:white;"> Lab Assessment Form</a><br>
+      <a target="_blank" href="http://209.211.220.205/vlabiitece/" class="text-normal-gray-small nounderline" style="color: white"> Labs Developed by Nodal Centers</a>
    </div>
    <div class="col-md-2">
       <div class="social">
@@ -204,7 +204,7 @@ class TestGetFooter(TestCase):
                <h2 class="text-h2-lightblue-small" style="font-weight: bold;margin-top: 0px;"> Follow us</h2>-->
             <ul>
                <li style="display:inline"><a target="_blank" href="https://www.facebook.com/pages/Virtual-Labs-IIT-Delhi/301510159983871"><img src="static/img/fb.png"></a></li>
-               <li style="display:inline "><a href="https://twitter.com/TheVirtualLabs"><img src="static/img/twitter.png"></a></li>
+               <li style="display:inline "><a target="_blank" href="https://twitter.com/TheVirtualLabs"><img src="static/img/twitter.png"></a></li>
                <li style="display:inline"><a target="_blank" href="https://in.linkedin.com/in/virtual-labs-008ba9136"><img src="static/img/linkedin.png"></a></li>
                <li style="display:inline"><a target="_blank" href="https://www.youtube.com/watch?v=asxRaOgk6a0"><img src="static/img/youtube.png"></a></li>
             </ul>
