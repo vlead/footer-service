@@ -101,7 +101,7 @@ Version: 1.0
          .border-right-green-dotted
          {
          border-right: 2px dotted;
-         margin-top: 30px;
+         /*margin-top: 30px;*/
          border-right-color: #678f48;
          min-height: 115px;
          float: left;
