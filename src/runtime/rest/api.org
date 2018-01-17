@@ -152,8 +152,8 @@ class TestGetFooter(TestCase):
      <!--<a href="http://community.virtual-labs.ac.in/w/index.php/QA/Integration_workshop" class="text-normal-gray-small nounderline" style="color: white" target="_blank"> QA Integration
       Workshop at IIIT Hyderabad</a><br>-->
      <!--<a href="http://community.vlabs.ac.in/docs/workshop-reports/report.html" class="text-normal-gray-small nounderline" style="color: white" target="_blank"> College Cloud Edition Workshop at IIIT Hyderabad</a><br>-->
-      <a href="http://community.virtual-labs.ac.in/w/index.php/A_new_set_of_25_Virtual_Labs_on_Portable_Media" class="text-normal-gray-small nounderline" style="color: white" target="_blank"> A new set of 25 Virtual Labs on Portable Media</a>
-      <a target="_blank" href="http://209.211.220.205/labassessment/assessmentform.html" class="text-normal-gray-small nounderline" target="_blank" style="color:white;"> Lab Assessment Form</a><br>
+      <a href="http://community.virtual-labs.ac.in/w/index.php/A_new_set_of_25_Virtual_Labs_on_Portable_Media" class="text-normal-gray-small nounderline" style="color: white" target="_blank"> A new set of 25 Virtual Labs on Portable Media</a><br>
+      <a target="_blank" href="http://209.211.220.205/labassessment/assessmentform.html" class="text-normal-gray-small nounderline" target="_blank" style="color:white;"> Lab Assessment Form</a>
    </div>
    <div class="col-md-3 border-right-green-dotted" id="contact">
       <a href="https://info.vlabs.ac.in/contactus" class="text-normal-gray-small nounderline" style="color:white" target="_blank">Contact us</a><br>
