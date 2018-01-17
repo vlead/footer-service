@@ -2,12 +2,23 @@
 
    + deployment
      + [[file:deployment/index.org][Deploying the application on a server]]
-     + [[file:deployment/run-feedback-in-development-environment.org][Running Feedback Portal on Developement Environment]]
+     + [[file:deployment/run-footer-in-development-environment.org][Running Footer Service on Development Environment]]
    + org-templates
-     + [[file:org-templates/level-0.org][level-0]]
-     + [[file:org-templates/level-1.org][level-1]]
-     + [[file:org-templates/level-2.org][level-2]]
-     + [[file:org-templates/level-3.org][level-3]]
+     + default
+       + [[file:org-templates/default/level-0.org][level-0]]
+       + [[file:org-templates/default/level-1.org][level-1]]
+       + [[file:org-templates/default/level-2.org][level-2]]
+       + [[file:org-templates/default/level-3.org][level-3]]
+       + [[file:org-templates/default/level-4.org][level-4]]
+       + [[file:org-templates/default/level-5.org][level-5]]
+     + readtheorg
+       + [[file:org-templates/readtheorg/level-0.org][level-0]]
+       + [[file:org-templates/readtheorg/level-1.org][level-1]]
+       + [[file:org-templates/readtheorg/level-2.org][level-2]]
+       + [[file:org-templates/readtheorg/level-3.org][level-3]]
+       + [[file:org-templates/readtheorg/level-4.org][level-4]]
+       + [[file:org-templates/readtheorg/level-5.org][level-5]]
+     + [[file:org-templates/tex-macros.org][tex-macros]]
    + requirements
      + [[file:requirements/index.org][Requirements for Footer Service]]
    + runtime
@@ -22,9 +33,8 @@
        + [[file:runtime/rest/app.org][The Flask Web Server]]
        + [[file:runtime/rest/api.org][The REST API]]
      + utils
-       + [[file:runtime/utils/class-persistence.org][Class Persistence]]
        + [[file:runtime/utils/class-templates.org][Class Templates]]
        + [[file:runtime/utils/index.org][The =utils= Package]]
        + [[file:runtime/utils/type-utils.org][Type Predicates and Checks]]
      + [[file:runtime/index.org][Runtime of Application]]
-   + [[file:index.org][Building a Feedback Portal :  Ground up to the Cloud]]
+  
