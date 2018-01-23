@@ -38,10 +38,10 @@ Version: 1.0
          .navbar-default, .navbar-inverse {
          border: 0;
          }
-         .footer-div
+        /* .footer-div
          {
          margin-top:120px;
-         }
+         }*/
          .main-logo-a {
          height: auto;
          overflow: visible;
