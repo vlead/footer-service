@@ -39,7 +39,7 @@
   {
     "lab integration kit releases": "http://community.virtual-labs.ac.in/w/index.php/Download",
     "A new set of 25 Virtual Labs on Portable Media": "http://community.virtual-labs.ac.in/w/index.php A_new_set_of_25_Virtual_Labs_on_Portable_Media",
-    "Contact us": "http://vlabs.ac.in:5959/contactus/",
+    "Contact us": "http://vlabs-about.vlabs.ac.in/",
     "Feedback": "http://feedback.vlabs.ac.in/",
     "Licensing": "http://vlabs.ac.in:5959/licensing/",   
     "Lab Assessment Form": "http://209.211.220.205/labassessment/assessmentform.html",
@@ -97,7 +97,7 @@ class TestGetFooter(TestCase):
 		   "key": KEY,
                    "lab integration kit releases": "http://community.virtual-labs.ac.in/w/index.php/Download",
                    "A new set of 25 Virtual Labs on Portable Media": "http://community.virtual-labs.ac.in/w/index.php A_new_set_of_25_Virtual_Labs_on_Portable_Media",
-                   "Contact us": "http://vlabs.ac.in:5959/contactus/",
+                   "Contact us": "http://vlabs-about.vlabs.ac.in/",
                    "Feedback": "http://feedback.vlabs.ac.in/",
                    "Licensing": "http://vlabs.ac.in:5959/licensing/",                 
                    "Lab Assessment Form": "http://209.211.220.205/labassessment/assessmentform.html",
@@ -157,7 +157,7 @@ class TestGetFooter(TestCase):
     
    </div>
    <div class="col-md-3 border-right-green-dotted" id="contact">
-      <a href="https://info.vlabs.ac.in/contactus" class="text-normal-gray-small nounderline" style="color:white" target="_blank">Contact us</a><br>
+      <a href="http://vlabs-about.vlabs.ac.in/" class="text-normal-gray-small nounderline" style="color:white" target="_blank">Contact us</a><br>
       <a href="http://feedback.vlabs.ac.in/" class="text-normal-gray-small nounderline" style="color:white" target="_blank"> Feedback</a><br>
       <a href="https://info.vlabs.ac.in/licensing/" class="text-normal-gray-small nounderline" target="_blank" style="color:white; "> Licensing</a><br>
       <a target="_blank" href="http://209.211.220.205/labassessment/assessmentform.html" class="text-normal-gray-small nounderline" target="_blank" style="color:white;"> Lab Assessment Form</a>
