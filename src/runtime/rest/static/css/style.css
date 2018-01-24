@@ -106,10 +106,10 @@ Version: 1.0
          min-height: 115px;
          float: left;
          }
-         .footer-div
+         /*.footer-div
          {
          margin-top:120px;
-         }
+         }*/
          table {
          font-family: arial, sans-serif;
          border-collapse: collapse;
