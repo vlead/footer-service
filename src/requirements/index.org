@@ -1,6 +1,6 @@
 #+TITLE: Requirements for Footer Service
 #+AUTHOR: VLEAD
-#+DATE: [2017-04-11 Wed]
+#+DATE: [2018-01-24 Wed]
 #+PROPERTY: results output
 #+PROPERTY: exports code
 #+SETUPFILE: ../org-templates/level-1.org
@@ -9,18 +9,19 @@
 
 * Introduction 
   This document describes all the requirements of =footer
-  service=. 
+  service=
+
 
 * Requirements
 
-** Requirement 1
+** Req1
    The main motivation is to provide footer as a service
    which should serve the Virtual Labs landing page footer  
    as it is. The footer service would render the footer
    dynamically instead of building/updating the static html
    pages every time. 
 
-** Requirement 2
+** Req2
    Irrespective of the system resolution as well as the
    accesibility of Virtual Labs site on multiple
    devices/platforms, the footer should be responsive.
