@@ -1,4 +1,4 @@
-#+TITLE: Building a Feedback Portal :  Ground up to the Cloud
+#+TITLE: Building a Footer Service :  Ground up to the Cloud
 #+AUTHOR: VLEAD
 #+DATE: [2016-08-15 Mon]
 #+SETUPFILE: ./org-templates/level-0.org
@@ -7,20 +7,16 @@
 #+OPTIONS: ^:nil
 
 * Version/Branch History
-
+  
 * Application
-  The Feedback portal helps to provide feedback on Virtual Labs.  The development
+  The Footer service helps to provide footer services on Virtual Labs.  The development
   of the application is divided into the following phases:
 
 1. [[./requirements/index.org][Requirements]]
 
-2. [[./design/index.org][Design]]
+2. [[./runtime/index.org][Runtime]]
 
-3. [[./data-model/index.org][Data Model]]
-
-4. [[./runtime/index.org][Runtime]]
-
-5. [[./deployment/index.org][Deployment]]
+3. [[./deployment/index.org][Deployment]]
        
 
 * Tangle                                       :boilerplate:
